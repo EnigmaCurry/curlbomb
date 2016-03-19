@@ -15,9 +15,7 @@ really this is just a bit more than that.
 
 ## Usage
 
-    curlbomb.py [-h] [-k] [-n NUM_GETS] [--ssl CERTIFICATE]
-                       [--mime-type MIME_TYPE]
-                       FILE
+    curlbomb.py [-h] [-k] [-n NUM_GETS] [--ssl CERTIFICATE] [--mime-type MIME_TYPE] FILE
     
     positional arguments:
       FILE                  File to serve
