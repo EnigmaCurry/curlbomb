@@ -94,8 +94,13 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
  #           handler_id, resourcef, allowed_gets, require_knock, *args)
 
     @classmethod
-    def get_server(cls, handler, ssl_cert=None, verbose=True):
-        httpd = socketserver.TCPServer(("", 0), handler)
+    def get_server(cls, handler, port="random", ssl_cert=None, verbose=True):
+        if port == "random":
+            port = 0
+        else:
+            port = int(port)
+            
+        httpd = socketserver.TCPServer(("", port), handler)
         if ssl_cert is not None:
             httpd.socket = ssl.wrap_socket(httpd.socket, certfile=ssl_cert, server_side=True)
         if verbose:
@@ -117,6 +122,7 @@ def main():
     parser.add_argument('-k', '--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
     parser.add_argument('-n', dest="num_gets", help="Number of times to serve resource", type=int, default=1)
+    parser.add_argument('-p', dest="port", help="TCP port number to use", default="random")
     parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate")
     parser.add_argument('--mime-type', help="The content type to serve the file as", default="text/plain")
     parser.add_argument('resource', metavar="FILE", help="File to serve", nargs=1)
@@ -126,7 +132,7 @@ def main():
         handler = CurlBomb.get_handler(
             resource, allowed_gets=args.num_gets,
             require_knock=not args.disable_knock, mime_type=args.mime_type)
-        httpd = CurlBomb.get_server(handler, ssl_cert=args.ssl)
+        httpd = CurlBomb.get_server(handler, port=args.port, ssl_cert=args.ssl)
 
         try:
             httpd.serve_forever()
