@@ -19,8 +19,6 @@ really this is just a bit more than that.
                        [--mime-type MIME_TYPE]
                        FILE
     
-    curlbomb
-    
     positional arguments:
       FILE                  File to serve
     
