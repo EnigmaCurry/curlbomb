@@ -15,8 +15,8 @@ really this is just a bit more than that.
 
 ## Usage
 
-    curlbomb.py [-h] [-k] [-n NUM_GETS] [--ssl CERTIFICATE] [--mime-type MIME_TYPE] FILE
-    
+    usage: curlbomb.py [-h] [-k] [-n NUM_GETS] [-p PORT] [--ssl CERTIFICATE] [--mime-type MIME_TYPE] FILE
+
     positional arguments:
       FILE                  File to serve
     
@@ -25,6 +25,7 @@ really this is just a bit more than that.
       -k, --disable-knock   Don't require authentication (no X-knock header)
                             (default: False)
       -n NUM_GETS           Number of times to serve resource (default: 1)
+      -p PORT               TCP port number to use (default: random)
       --ssl CERTIFICATE     Use SSL with the given certificate (default: None)
       --mime-type MIME_TYPE
                             The content type to serve the file as (default:
