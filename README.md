@@ -1,0 +1,13 @@
+# curlbomb - a personal HTTP server for serving one-time-use bash scripts (or other files)
+
+You know all those docs for cool dev tools that start out by telling
+you to install their software in one line, like this?
+
+    bash <(curl -s http://example.com/install.sh)
+
+I call that a curl bomb... I don't know if anyone else does.
+
+This script is an HTTP server that will serve that script to a client
+exactly once and then quit. Yea, you could just use "python -m http.server", 
+really this is just a bit more than that.
+
