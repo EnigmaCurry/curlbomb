@@ -1,4 +1,6 @@
-# curlbomb - a personal HTTP server for serving one-time-use bash scripts (or other files)
+# curlbomb 
+
+A personal HTTP server for serving one-time-use bash scripts (or other files)
 
 You know all those docs for cool dev tools that start out by telling
 you to install their software in one line, like this?
