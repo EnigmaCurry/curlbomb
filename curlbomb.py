@@ -90,8 +90,6 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
         handler.require_knock = require_knock
         handler.handler_id = handler_id
         return handler
- #       return lambda *args: CurlBomb(
- #           handler_id, resourcef, allowed_gets, require_knock, *args)
 
     @classmethod
     def get_server(cls, handler, port="random", ssl_cert=None, verbose=True):
