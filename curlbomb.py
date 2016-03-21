@@ -23,6 +23,7 @@ import http.server
 import socketserver
 import ssl
 import os
+import sys
 from io import BytesIO
 from collections import defaultdict
 import uuid
@@ -125,8 +126,14 @@ def main():
     parser.add_argument('--mime-type', help="The content type to serve the file as", default="text/plain")
     parser.add_argument('resource', metavar="FILE", help="File to serve", nargs=1)
     args = parser.parse_args()
-    
-    with open(args.resource[0], 'br') as resource:
+
+    resource = args.resource[0]
+    if resource == '-':
+        resource = sys.stdin.buffer
+    else:
+        resource = open(resource, 'br')
+
+    try:
         handler = CurlBomb.get_handler(
             resource, allowed_gets=args.num_gets,
             require_knock=not args.disable_knock, mime_type=args.mime_type)
@@ -136,6 +143,8 @@ def main():
             httpd.serve_forever()
         except KeyboardInterrupt:
             pass
+    finally:
+        resource.close()    
     
 if __name__ == "__main__":
     main()
