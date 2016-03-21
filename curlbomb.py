@@ -130,6 +130,7 @@ def main():
     resource = args.resource[0]
     if resource == '-':
         resource = sys.stdin.buffer
+        resource = BytesIO(resource.read())
     else:
         resource = open(resource, 'br')
 
