@@ -69,7 +69,7 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(self.__resourcef.read())
             
-        if self.__allowed_gets > 0 and self.__allowed_gest <= self.get_vars()['num_gets']:
+        if self.__allowed_gets > 0 and self.__allowed_gets <= self.get_vars()['num_gets']:
             print("Served resource {} times. Done.".format(self.get_vars()['num_gets']))
             os._exit(0)
         else:
