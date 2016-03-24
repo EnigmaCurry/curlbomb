@@ -13,10 +13,9 @@ This script is an HTTP server that will serve that script to a client
 exactly once and then quit. Yea, you could just use "python -m http.server", 
 really this is just a bit more than that.
 
-MIT Licensed
-
 Ryan McGuire <ryan@enigmacurry.com>
 http://github.com/EnigmaCurry/curlbomb
+
 """
 
 import socket
