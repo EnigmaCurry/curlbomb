@@ -13,12 +13,55 @@ This script is an HTTP server that will serve that script to a client
 exactly once and then quit. Yea, you could just use "python -m http.server", 
 really this is just a bit more than that.
 
-## Usage
+## Example Use
 
-    usage: curlbomb.py [-h] [-k] [-n NUM_GETS] [-p PORT] [--ssl CERTIFICATE] [--mime-type MIME_TYPE] FILE
+Serve a script stored in a file:
 
+    curlbomb /path/to/script
+	
+This outputs a curl command to run the script on aanother computer:
+
+    Client command:
+
+      bash <(curl http://10.13.37.133:47601 -H "X-knock: c19fed96a78844b982053448e44060f9")
+
+You can also pipe in scripts:
+
+    cat /path/to/script | curlbomb
+	
+Or from shell scripts:
+
+    cat <<EOF | curlbomb
+    #!/bin/bash
+    echo "I'm a script output from another script on another computer"
+	EOF
+
+The shebang line is interpreted and automatically changes the curlbomb command:
+
+    cat <<EOF | curlbomb
+	#!/usr/bin/env python3
+	import this
+	print("Hello, from Python!")
+	EOF
+	
+Which outputs the following curlbomb, tailored for Python:
+
+    /usr/bin/env python3 <(curl http://10.13.37.133:55298 -H "X-knock: 3b4bc96e29754238a30c286d1c8173c7")
+
+You can also get the curl without the bomb by specifying --survey,
+which only outputs the inner curl command.
+
+## Command Line Args
+
+    usage: curlbomb [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND]
+                    [--ssl CERTIFICATE] [--mime-type MIME_TYPE] [--survey]
+                    [FILE]
+    
+    curlbomb
+    
     positional arguments:
-      FILE                  File to serve
+      FILE                  File to serve (default: <_io.TextIOWrapper
+                            name='<stdin>' mode='r' encoding='UTF-8'>)
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -26,7 +69,10 @@ really this is just a bit more than that.
                             (default: False)
       -n NUM_GETS           Number of times to serve resource (default: 1)
       -p PORT               TCP port number to use (default: random)
+      -q                    Be quiet (default: False)
+      -c COMMAND            The the shell command to curlbomb into (default: AUTO)
       --ssl CERTIFICATE     Use SSL with the given certificate (default: None)
       --mime-type MIME_TYPE
                             The content type to serve the file as (default:
                             text/plain)
+      --survey              Just a survey mission, no bomb run (default: False)

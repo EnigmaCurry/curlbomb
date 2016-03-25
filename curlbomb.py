@@ -128,18 +128,18 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
             print("")
         return httpd
 
-def argparser(formatter_class=argparse.ArgumentDefaultsHelpFormatter):
+def argparser(formatter_class=argparse.HelpFormatter):
     parser = argparse.ArgumentParser(description='curlbomb', formatter_class=formatter_class)
     parser.add_argument('-k', '--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
-    parser.add_argument('-n', dest="num_gets", help="Number of times to serve resource", type=int, default=1)
-    parser.add_argument('-p', dest="port", help="TCP port number to use", default="random")
+    parser.add_argument('-n', dest="num_gets", help="Number of times to serve resource (default:1)", type=int, default=1)
+    parser.add_argument('-p', dest="port", help="TCP port number to use (default:random)", default="random")
     parser.add_argument('-q', dest="quiet", action="store_true", help="Be quiet")
-    parser.add_argument('-c', dest="command", help="The the shell command to curlbomb into", default="AUTO")
+    parser.add_argument('-c', dest="command", help="The the shell command to curlbomb into (default is to detect #!interpreter)", default="AUTO")
     parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate")
-    parser.add_argument('--mime-type', help="The content type to serve the file as", default="text/plain")
+    parser.add_argument('--mime-type', help="The content type to serve", default="text/plain")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run", action="store_true")
-    parser.add_argument('resource', metavar="FILE", help="File to serve", nargs='?', default=sys.stdin)
+    parser.add_argument('resource', metavar="FILE", help="File to serve (or don't specify for stdin)", nargs='?', default=sys.stdin)
     return parser
 
 def main():
