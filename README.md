@@ -81,10 +81,10 @@ the sshd_config of the server to allow GatewayPorts:
 
 ## Command Line Args
 
-    usage: curlbomb.py [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
-                       [--ssh SSH_FORWARD] [--ssl CERTIFICATE]
-                       [--mime-type MIME_TYPE] [--survey]
-                       [FILE]
+    usage: curlbomb [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
+                    [--ssh SSH_FORWARD] [--ssl CERTIFICATE]
+                    [--mime-type MIME_TYPE] [--survey]
+                    [FILE]
     
     curlbomb
     
