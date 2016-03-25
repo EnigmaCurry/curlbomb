@@ -6,3 +6,6 @@ dist
 README.txt
 aur
 build
+curlbomb-*.tar.gz
+curlbomb-*.tar.xz
+*.egg-info
