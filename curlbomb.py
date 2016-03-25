@@ -32,7 +32,9 @@ from collections import defaultdict
 import uuid
 import argparse
 
-__version__ = "1.0.11"
+__version__ = "1.0.12"
+
+ssh_tunnel = None
 
 class CurlBomb(http.server.BaseHTTPRequestHandler):
     # Per handler_id state vars:
@@ -77,6 +79,8 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
 
         if self.__allowed_gets > 0 and self.__allowed_gets <= self.get_vars()['num_gets']:
             print("Served resource {} times. Done.".format(self.get_vars()['num_gets']))
+            if ssh_tunnel is not None:
+                ssh_tunnel.kill()
             os._exit(0)
         else:
             self.__resourcef.seek(0)
@@ -101,6 +105,7 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
     @classmethod
     def get_server(cls, handler, port="random", ssl_cert=None,
                    verbose=True, shell_command="bash", http_fetcher="curl -sL", ssh=None):
+        global ssh_tunnel
         if port == "random":
             port = 0
         else:
@@ -129,7 +134,7 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
                 http_port = ssh_parts[1]
             ssh_forward = "0.0.0.0:{http_port}:localhost:{port}".format(
                 port=port, host=host, http_port=http_port)
-            ssh_conn = SSHRemoteForward(ssh_host, ssh_forward, ssh_port)
+            ssh_tunnel = ssh_conn = SSHRemoteForward(ssh_host, ssh_forward, ssh_port)
             ssh_conn.start()
             if not ssh_conn.wait_connected():
                 print(ssh_conn.last_msg)
@@ -216,6 +221,8 @@ class SSHRemoteForward(threading.Thread):
     
     def kill(self):
         self._kill = True
+        self.join()
+        print("SSH tunnel closed")
         
 def argparser(formatter_class=argparse.HelpFormatter):
     parser = argparse.ArgumentParser(description='curlbomb', formatter_class=formatter_class)
