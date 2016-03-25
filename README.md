@@ -13,6 +13,16 @@ This script is an HTTP server that will serve that script to a client
 exactly once and then quit. Yea, you could just use "python -m http.server", 
 really this is just a bit more than that.
 
+## Install
+
+This script can be installed from the Arch User Repository (AUR):
+
+    pacaur -S curlbomb
+	
+Or from the Python Package Index (PyPI):
+
+    pip install curlbomb
+
 ## Example Use
 
 Serve a script stored in a file:

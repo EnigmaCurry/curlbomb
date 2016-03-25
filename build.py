@@ -15,8 +15,9 @@ with open('README.txt','w+') as rst_file:
 ### Build manpage
 parts = re.split("^##?.*", readme, flags=re.MULTILINE)
 long_description = parts[1]
-example_use = parts[2]
-arg_help = parts[3]
+installation = parts[2]
+example_use = parts[3]
+arg_help = parts[4]
 
 appname = os.popen("python setup.py --name").read().strip()
 short_description = os.popen("python setup.py --description").read().strip()
