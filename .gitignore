@@ -9,3 +9,6 @@ build
 curlbomb-*.tar.gz
 curlbomb-*.tar.xz
 *.egg-info
+curlbomb.1
+pkg/
+src/

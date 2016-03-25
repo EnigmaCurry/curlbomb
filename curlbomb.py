@@ -115,10 +115,9 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
             print("  " + cmd)
             print("")
         return httpd
-        
 
-def main():
-    parser = argparse.ArgumentParser(description='curlbomb', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def argparser(formatter_class=argparse.ArgumentDefaultsHelpFormatter):
+    parser = argparse.ArgumentParser(description='curlbomb', formatter_class=formatter_class)
     parser.add_argument('-k', '--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
     parser.add_argument('-n', dest="num_gets", help="Number of times to serve resource", type=int, default=1)
@@ -127,6 +126,10 @@ def main():
     parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate")
     parser.add_argument('--mime-type', help="The content type to serve the file as", default="text/plain")
     parser.add_argument('resource', metavar="FILE", help="File to serve", nargs=1)
+    return parser
+
+def main():
+    parser = argparser()
     args = parser.parse_args()
 
     resource = args.resource[0]
