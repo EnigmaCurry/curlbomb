@@ -2,17 +2,13 @@
 
 from setuptools import setup
 import os
-try:
-    from build_manpage import BuildManPage
-except ImportError:
-    pass
 
 long_description = description = "A personal HTTP server for serving one-time-use bash scripts"
 if os.path.exists('README.txt'):
     long_description=open('README.txt').read()
 
 setup(name='curlbomb',
-      version='1.0.4',
+      version='1.0.5',
       description=description,
       long_description=long_description,
       license="MIT",
@@ -27,6 +23,5 @@ setup(name='curlbomb',
       py_modules=['curlbomb'],
       entry_points={
           'console_scripts': ['curlbomb = curlbomb:main']},
-      cmdclass={'build_manpage': BuildManPage}
 )
 

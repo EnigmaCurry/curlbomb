@@ -1,43 +1,11 @@
 # -*- coding: utf-8 -*-
 
+# This is based on build_manpage originally downloaded from:
+# https://github.com/pwman3/pwman3/
+
+# Original license:
 # This file is distributed under the same License of Python
 # Copyright (c) 2014 Oz Nahum Tiram  <nahumoz@gmail.com>
-
-"""
-build_manpage.py
-
-Add a `build_manpage` command  to your setup.py.
-To use this Command class import the class to your setup.py,
-and add a command to call this class::
-
-    from build_manpage import BuildManPage
-
-    ...
-    ...
-
-    setup(
-    ...
-    ...
-    cmdclass={
-        'build_manpage': BuildManPage,
-    )
-
-You can then use the following setup command to produce a man page::
-
-    $ python setup.py build_manpage --output=prog.1 --parser=yourmodule:argparser
-
-Alternatively, set the variable AUTO_BUILD to True, and just invoke::
-
-    $ python setup.py build
-
-If automatically want to build the man page every time you invoke your build,
-add to your ```setup.cfg``` the following::
-
-    [build_manpage]
-    output = <appname>.1
-    parser = <path_to_your_parser>
-"""
-
 
 import datetime
 from distutils.core import Command
@@ -46,8 +14,7 @@ from distutils.command.build import build
 import argparse
 import re as _re
 
-AUTO_BUILD = True
-
+description="curlbomb is a personal HTTP server for serving one-time-use bash scripts."
 long_description="""curlbomb is a personal HTTP server for serving one-time-use bash scripts.
 
 You know all those docs for cool dev tools that start out by telling
@@ -61,63 +28,28 @@ This script is an HTTP server that will serve that script to a client
 exactly once and then quit. Yea, you could just use "python -m http.server", 
 really this is just a bit more than that.
 """
+appname = 'curlbomb'
+homepage = 'http://github.com/EnigmaCurry/curlbomb'
+authors = ("Ryan McGuire <ryan@enigmacurry.com>")
+from curlbomb import argparser
 
-class BuildManPage(Command):
+def build_manpage():
+    parser = argparser(formatter_class=ManPageFormatter)
+    sections = {'authors': authors,
+                'distribution': ("The latest version of {} may be "
+                                 "downloaded from {}".format(appname,
+                                                             homepage))
+                }
 
-    description = 'Generate man page from an ArgumentParser instance.'
+    mpf = ManPageFormatter('curlbomb',
+                           desc=description,
+                           long_desc=long_description,
+                           ext_sections=sections)
 
-    user_options = [
-        ('appname=', None, 'name of the app'),
-        ('output=', 'O', 'output file'),
-        ('parser=', None, 'module path to an ArgumentParser instance'
-         '(e.g. mymod:func, where func is a method or function which return'
-         'an arparse.ArgumentParser instance.'),
-    ]
+    m = mpf.format_man_page(parser)
 
-    def initialize_options(self):
-        self.output = None
-        self.parser = None
-        self.appname = None
-
-    def finalize_options(self):
-        if self.output is None:
-            raise DistutilsOptionError('\'output\' option is required')
-        if self.parser is None:
-            raise DistutilsOptionError('\'parser\' option is required')
-        mod_name, func_name = self.parser.split(':')
-        fromlist = mod_name.split('.')
-        try:
-            mod = __import__(mod_name, fromlist=fromlist)
-            self._parser = getattr(mod, func_name)(formatter_class=ManPageFormatter)
-
-        except ImportError as err:
-            raise err
-
-        self.announce('Writing man page %s' % self.output)
-        self._today = datetime.date.today()
-
-    def run(self):
-
-        dist = self.distribution
-        homepage = dist.get_url()
-        appname = self.appname
-
-        sections = {'authors': ("Ryan McGuire <ryan@enigmacurry.com>"),
-                    'distribution': ("The latest version of {} may be "
-                                     "downloaded from {}".format(appname,
-                                                                 homepage))
-                    }
-
-        dist = self.distribution
-        mpf = ManPageFormatter(appname,
-                               desc=dist.get_description(),
-                               long_desc=long_description,
-                               ext_sections=sections)
-
-        m = mpf.format_man_page(self._parser)
-
-        with open(self.output, 'w') as f:
-            f.write(m)
+    with open('curlbomb.1', 'w') as f:
+        f.write(m)
 
 
 class ManPageFormatter(argparse.HelpFormatter):
@@ -276,21 +208,5 @@ class ManPageFormatter(argparse.HelpFormatter):
             return ', '.join(parts)
 
 
-class ManPageCreator(object):
-    """
-    This class takes a little different approach. Instead of relying on
-    information from ArgumentParser, it relies on information retrieved
-    from distutils.
-    This class makes it easy for package maintainer to create man pages in cases,
-    that there is no ArgumentParser.
-    """
-    pass
-
-    def _mk_name(self, distribution):
-        """
-        """
-        return '.SH NAME\n%s \\- %s\n' % (distribution.get_name(),
-                                          distribution.get_description())
-
-if AUTO_BUILD:
-    build.sub_commands.append(('build_manpage', None))
+if __name__ == "__main__":
+    build_manpage()
