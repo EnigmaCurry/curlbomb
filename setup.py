@@ -3,13 +3,15 @@
 from setuptools import setup
 import os
 
+from curlbomb import __version__
+
 long_description = description = "A personal HTTP server for serving one-time-use shell scripts"
 if os.path.exists('README.txt'):
     with open('README.txt') as f:
         long_description=f.read()
 
 setup(name='curlbomb',
-      version='1.0.10',
+      version=__version__,
       description=description,
       long_description=long_description,
       license="MIT",
