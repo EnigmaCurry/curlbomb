@@ -15,11 +15,11 @@ really this is just a bit more than that.
 
 ## Install
 
-This script can be installed from the Arch User Repository (AUR):
+This script can be installed from the [Arch User Repository](https://aur.archlinux.org/packages/curlbomb/) (AUR):
 
     pacaur -S curlbomb
 	
-Or from the Python Package Index (PyPI):
+Or from the [Python Package Index](https://pypi.python.org/pypi/curlbomb) (PyPI):
 
     pip install curlbomb
 
