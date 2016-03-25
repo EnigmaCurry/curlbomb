@@ -3,9 +3,10 @@
 from setuptools import setup
 import os
 
-long_description = description = "A personal HTTP server for serving one-time-use bash scripts"
+long_description = description = "A personal HTTP server for serving one-time-use shell scripts"
 if os.path.exists('README.txt'):
-    long_description=open('README.txt').read()
+    with open('README.txt') as f:
+        long_description=f.read()
 
 setup(name='curlbomb',
       version='1.0.8',
@@ -21,6 +22,7 @@ setup(name='curlbomb',
       author_email='ryan@enigmacurry.com',
       url='https://github.com/EnigmaCurry/curlbomb',
       py_modules=['curlbomb'],
+      include_package_data = True,
       entry_points={
           'console_scripts': ['curlbomb = curlbomb:main']},
 )

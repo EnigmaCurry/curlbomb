@@ -1,6 +1,6 @@
 # curlbomb 
 
-A personal HTTP server for serving one-time-use bash scripts (think installers)
+A personal HTTP server for serving one-time-use shell scripts.
 
 You know all those docs for cool dev tools that start out by telling
 you to install their software in one line, like this?
@@ -19,11 +19,9 @@ Serve a script stored in a file:
 
     curlbomb /path/to/script
 	
-This outputs a curl command to run the script on aanother computer:
+This outputs a curl command to run the script on another computer:
 
-    Client command:
-
-      bash <(curl http://10.13.37.133:47601 -H "X-knock: c19fed96a78844b982053448e44060f9")
+    bash <(curl http://10.13.37.133:47601 -H "X-knock: c19fed96a78844b982053448e44060f9")
 
 You can also get the curl without the bomb by specifying --survey.
 This outputs just the inner curl command, which is useful for testing.
@@ -60,26 +58,25 @@ You can switch to wget with -w:
 
 ## Command Line Args
 
-    usage: curlbomb [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND]
-                    [--ssl CERTIFICATE] [--mime-type MIME_TYPE] [--survey]
-                    [FILE]
+    usage: curlbomb.py [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
+                       [--ssl CERTIFICATE] [--mime-type MIME_TYPE] [--survey]
+                       [FILE]
     
     curlbomb
     
     positional arguments:
-      FILE                  File to serve (default: <_io.TextIOWrapper
-                            name='<stdin>' mode='r' encoding='UTF-8'>)
+      FILE                  File to serve (or don't specify for stdin)
     
     optional arguments:
       -h, --help            show this help message and exit
       -k, --disable-knock   Don't require authentication (no X-knock header)
-                            (default: False)
-      -n NUM_GETS           Number of times to serve resource (default: 1)
-      -p PORT               TCP port number to use (default: random)
-      -q                    Be quiet (default: False)
-      -c COMMAND            The the shell command to curlbomb into (default: AUTO)
-      --ssl CERTIFICATE     Use SSL with the given certificate (default: None)
+      -n NUM_GETS           Number of times to serve resource (default:1)
+      -p PORT               TCP port number to use (default:random)
+      -q                    Be quiet
+      -c COMMAND            The the shell command to curlbomb into (default is to
+                            detect #!interpreter)
+      -w                    Output wget command rather than curl
+      --ssl CERTIFICATE     Use SSL with the given certificate
       --mime-type MIME_TYPE
-                            The content type to serve the file as (default:
-                            text/plain)
-      --survey              Just a survey mission, no bomb run (default: False)
+                            The content type to serve
+      --survey              Just a survey mission, no bomb run

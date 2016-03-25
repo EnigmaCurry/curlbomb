@@ -12,43 +12,24 @@ from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 from distutils.command.build import build
 import argparse
-import re as _re
 
-description="curlbomb is a personal HTTP server for serving one-time-use bash scripts."
-long_description="""curlbomb is a personal HTTP server for serving one-time-use bash scripts.
-
-You know all those docs for cool dev tools that start out by telling
-you to install their software in one line, like this?
-
-    bash <(curl -s http://example.com/install.sh)
-
-I call that a curl bomb... I don't know if anyone else does.
-
-This script is an HTTP server that will serve that script to a client
-exactly once and then quit. Yea, you could just use "python -m http.server", 
-really this is just a bit more than that.
-"""
-appname = 'curlbomb'
-homepage = 'http://github.com/EnigmaCurry/curlbomb'
-authors = ("Ryan McGuire <ryan@enigmacurry.com>")
-from curlbomb import argparser
-
-def build_manpage():
-    parser = argparser(formatter_class=ManPageFormatter)
+def build_manpage(parser, output, appname, description, long_description, authors, homepage, pre_sections=[]):
+    argparser = parser(formatter_class=ManPageFormatter)
     sections = {'authors': authors,
                 'distribution': ("The latest version of {} may be "
                                  "downloaded from {}".format(appname,
                                                              homepage))
                 }
 
-    mpf = ManPageFormatter('curlbomb',
+    mpf = ManPageFormatter(appname,
                            desc=description,
+                           pre_sections=pre_sections,
                            long_desc=long_description,
                            ext_sections=sections)
 
-    m = mpf.format_man_page(parser)
+    m = mpf.format_man_page(argparser)
 
-    with open('curlbomb.1', 'w') as f:
+    with open(output, 'w') as f:
         f.write(m)
 
 
@@ -87,6 +68,7 @@ class ManPageFormatter(argparse.HelpFormatter):
                  section=1,
                  desc=None,
                  long_desc=None,
+                 pre_sections=[],
                  ext_sections=None,
                  authors=None,
                  ):
@@ -98,6 +80,7 @@ class ManPageFormatter(argparse.HelpFormatter):
         self._today = datetime.date.today().strftime('%Y\\-%m\\-%d')
         self._desc = desc
         self._long_desc = long_desc
+        self._pre_sections = pre_sections
         self._ext_sections = ext_sections
 
     def _get_formatter(self, **kwargs):
@@ -146,6 +129,10 @@ class ManPageFormatter(argparse.HelpFormatter):
         else:
             return ''
 
+    def _mk_section(self, name, content):
+        content = content.replace('\n', '\n.br\n')
+        return '.SH %s\n%s\n' % (name.upper(), self._markup(content))
+
     def _mk_footer(self, sections):
         if not hasattr(sections, '__iter__'):
             return ''
@@ -162,6 +149,8 @@ class ManPageFormatter(argparse.HelpFormatter):
         page.append(self._mk_title(self._prog))
         page.append(self._mk_synopsis(parser))
         page.append(self._mk_description())
+        for name, content in self._pre_sections:
+            page.append(self._mk_section(name, content))
         page.append(self._mk_options(parser))
         page.append(self._mk_footer(self._ext_sections))
 
