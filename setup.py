@@ -9,7 +9,7 @@ if os.path.exists('README.txt'):
         long_description=f.read()
 
 setup(name='curlbomb',
-      version='1.0.9',
+      version='1.0.10',
       description=description,
       long_description=long_description,
       license="MIT",

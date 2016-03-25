@@ -56,10 +56,24 @@ You can switch to wget with -w:
 
       bash <(wget -q -O - http://10.13.37.133:57670 --header="X-knock: 5e5568bf44624e70a7490783acee150d")
 
+You can tunnel the curlbomb server through another host with --ssh:
+
+    echo "apt-get install emacs-nox" | curlbomb --ssh user@example.com:8080
+	
+The above command connects to example.com and forwards the curlbomb
+HTTP port to example.com:8080. Users on example.com will be able to
+fetch the resource from localhost:8080. If you want anyone in the
+world to be able to fetch example.com:8080 you will need to modify
+the sshd_config of the server to allow GatewayPorts:
+
+	# Put this in your /etc/ssh/sshd_config and restart your ssh service:
+    Gatewayports clientspecified
+
 ## Command Line Args
 
     usage: curlbomb.py [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
-                       [--ssl CERTIFICATE] [--mime-type MIME_TYPE] [--survey]
+                       [--ssh SSH_FORWARD] [--ssl CERTIFICATE]
+                       [--mime-type MIME_TYPE] [--survey]
                        [FILE]
     
     curlbomb
@@ -76,6 +90,8 @@ You can switch to wget with -w:
       -c COMMAND            The the shell command to curlbomb into (default is to
                             detect #!interpreter)
       -w                    Output wget command rather than curl
+      --ssh SSH_FORWARD     Forward curlbomb through another host via SSH -
+                            [user@]host[:ssh_port][:http_port]
       --ssl CERTIFICATE     Use SSL with the given certificate
       --mime-type MIME_TYPE
                             The content type to serve
