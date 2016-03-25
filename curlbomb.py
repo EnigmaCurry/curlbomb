@@ -94,7 +94,7 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
         return handler
 
     @classmethod
-    def get_server(cls, handler, port="random", ssl_cert=None, verbose=True):
+    def get_server(cls, handler, port="random", ssl_cert=None, verbose=True, shell_command="bash"):
         if port == "random":
             port = 0
         else:
@@ -104,12 +104,24 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
         if ssl_cert is not None:
             httpd.socket = ssl.wrap_socket(httpd.socket, certfile=ssl_cert, server_side=True)
         if verbose:
-            cmd = "bash <(curl http{ssl}://{ip}:{port})".format(
-                ssl="s" if ssl_cert is not None else "",
-                ip=socket.gethostbyname(socket.gethostname()),
-                port=httpd.socket.getsockname()[1])
             if handler.require_knock:
-                cmd = cmd[:-1] + ' -H "X-knock: {}")'.format(handler.handler_id)
+                knock = ' -H "X-knock: {}"'.format(handler.handler_id)
+
+            if shell_command is None:
+                cmd = "curl http{ssl}://{ip}:{port}{knock}".format(
+                    ssl="s" if ssl_cert is not None else "",
+                    ip=socket.gethostbyname(socket.gethostname()),
+                    port=httpd.socket.getsockname()[1],
+                    knock=knock)
+            else:
+                cmd = "{shell_command} <(curl http{ssl}://{ip}:{port}{knock})".format(
+                    shell_command=shell_command,
+                    ssl="s" if ssl_cert is not None else "",
+                    ip=socket.gethostbyname(socket.gethostname()),
+                    port=httpd.socket.getsockname()[1],
+                    knock=knock
+                )
+                
             print("Client command:")
             print("")
             print("  " + cmd)
@@ -123,27 +135,46 @@ def argparser(formatter_class=argparse.ArgumentDefaultsHelpFormatter):
     parser.add_argument('-n', dest="num_gets", help="Number of times to serve resource", type=int, default=1)
     parser.add_argument('-p', dest="port", help="TCP port number to use", default="random")
     parser.add_argument('-q', dest="quiet", action="store_true", help="Be quiet")
+    parser.add_argument('-c', dest="command", help="The the shell command to curlbomb into", default="AUTO")
     parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate")
     parser.add_argument('--mime-type', help="The content type to serve the file as", default="text/plain")
-    parser.add_argument('resource', metavar="FILE", help="File to serve", nargs=1)
+    parser.add_argument('--survey', help="Just a survey mission, no bomb run", action="store_true")
+    parser.add_argument('resource', metavar="FILE", help="File to serve", nargs='?', default=sys.stdin)
     return parser
 
 def main():
     parser = argparser()
     args = parser.parse_args()
-
-    resource = args.resource[0]
-    if resource == '-':
-        resource = sys.stdin.buffer
-        resource = BytesIO(resource.read())
+    
+    if args.resource == sys.stdin and sys.stdin.isatty():
+        parser.print_help()
+        print("\nYou must specify a file or pipe one to this command's stdin")
+        exit(1)
+    if args.resource == sys.stdin or args.resource == '-':
+        resource = BytesIO(sys.stdin.buffer.read())
     else:
-        resource = open(resource, 'br')
+        resource = open(args.resource, 'br')
 
+    if args.survey:
+        # Turn off shell_command entirely, just show a raw curl command
+        shell_command = None
+    else:
+        #Detect if the input has a shebang so we can detect the shell command to display
+        if args.command == "AUTO":
+            line = resource.readline(500)
+            resource.seek(0)
+            if line.startswith(b'#!'):
+                shell_command = line[2:].decode("utf-8").rstrip()
+            else:
+                shell_command = "bash"
+        else:
+            shell_command = args.command
+            
     try:
         handler = CurlBomb.get_handler(
             resource, allowed_gets=args.num_gets,
             require_knock=not args.disable_knock, mime_type=args.mime_type)
-        httpd = CurlBomb.get_server(handler, port=args.port, verbose=not args.quiet, ssl_cert=args.ssl)
+        httpd = CurlBomb.get_server(handler, port=args.port, verbose=not args.quiet, ssl_cert=args.ssl, shell_command=shell_command)
 
         try:
             httpd.serve_forever()
