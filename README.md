@@ -25,9 +25,12 @@ This outputs a curl command to run the script on aanother computer:
 
       bash <(curl http://10.13.37.133:47601 -H "X-knock: c19fed96a78844b982053448e44060f9")
 
-You can also pipe in scripts:
+You can also get the curl without the bomb by specifying --survey.
+This outputs just the inner curl command, which is useful for testing.
 
-    cat /path/to/script | curlbomb
+You can pipe scripts to stdin:
+
+    echo "pacman --noconfirm -S openssh && systemctl start sshd" | curlbomb
 	
 Or from shell scripts:
 
@@ -48,8 +51,12 @@ Which outputs the following curlbomb, tailored for Python:
 
     /usr/bin/env python3 <(curl http://10.13.37.133:55298 -H "X-knock: 3b4bc96e29754238a30c286d1c8173c7")
 
-You can also get the curl without the bomb by specifying --survey,
-which only outputs the inner curl command.
+You can switch to wget with -w:
+
+    $ echo "apt-get install curl" | curlbomb -w
+	Client command:
+
+      bash <(wget -q -O - http://10.13.37.133:57670 --header="X-knock: 5e5568bf44624e70a7490783acee150d")
 
 ## Command Line Args
 

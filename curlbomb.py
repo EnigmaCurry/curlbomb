@@ -94,7 +94,8 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
         return handler
 
     @classmethod
-    def get_server(cls, handler, port="random", ssl_cert=None, verbose=True, shell_command="bash"):
+    def get_server(cls, handler, port="random", ssl_cert=None,
+                   verbose=True, shell_command="bash", http_fetcher="curl -sL"):
         if port == "random":
             port = 0
         else:
@@ -104,17 +105,23 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
         if ssl_cert is not None:
             httpd.socket = ssl.wrap_socket(httpd.socket, certfile=ssl_cert, server_side=True)
         if verbose:
+            knock = ""
             if handler.require_knock:
-                knock = ' -H "X-knock: {}"'.format(handler.handler_id)
+                if http_fetcher.startswith("wget"):
+                    knock = ' --header="X-knock: {}"'.format(handler.handler_id)
+                else:
+                    knock = ' -H "X-knock: {}"'.format(handler.handler_id)
 
             if shell_command is None:
-                cmd = "curl http{ssl}://{ip}:{port}{knock}".format(
+                cmd = "{http_fetcher} http{ssl}://{ip}:{port}{knock}".format(
+                    http_fetcher=http_fetcher,
                     ssl="s" if ssl_cert is not None else "",
                     ip=socket.gethostbyname(socket.gethostname()),
                     port=httpd.socket.getsockname()[1],
                     knock=knock)
             else:
-                cmd = "{shell_command} <(curl http{ssl}://{ip}:{port}{knock})".format(
+                cmd = "{shell_command} <({http_fetcher} http{ssl}://{ip}:{port}{knock})".format(
+                    http_fetcher=http_fetcher,
                     shell_command=shell_command,
                     ssl="s" if ssl_cert is not None else "",
                     ip=socket.gethostbyname(socket.gethostname()),
@@ -136,6 +143,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('-p', dest="port", help="TCP port number to use (default:random)", default="random")
     parser.add_argument('-q', dest="quiet", action="store_true", help="Be quiet")
     parser.add_argument('-c', dest="command", help="The the shell command to curlbomb into (default is to detect #!interpreter)", default="AUTO")
+    parser.add_argument('-w', dest="wget", help="Output wget command rather than curl", action="store_true")
     parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate")
     parser.add_argument('--mime-type', help="The content type to serve", default="text/plain")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run", action="store_true")
@@ -169,12 +177,19 @@ def main():
                 shell_command = "bash"
         else:
             shell_command = args.command
+
+    if args.wget:
+        http_fetcher = "wget -q -O -"
+    else:
+        http_fetcher = "curl -sL"
             
     try:
         handler = CurlBomb.get_handler(
             resource, allowed_gets=args.num_gets,
             require_knock=not args.disable_knock, mime_type=args.mime_type)
-        httpd = CurlBomb.get_server(handler, port=args.port, verbose=not args.quiet, ssl_cert=args.ssl, shell_command=shell_command)
+        httpd = CurlBomb.get_server(handler, port=args.port,
+                                    verbose=not args.quiet, ssl_cert=args.ssl,
+                                    shell_command=shell_command, http_fetcher=http_fetcher)
 
         try:
             httpd.serve_forever()
