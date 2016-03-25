@@ -9,5 +9,5 @@ with open('README.txt','w+') as rst_file:
     
     rst_file.write(pypandoc.convert(readme,'rst', format='markdown'))
 
-#os.system("python setup.py sdist upload")
-#os.remove('README.txt')
+os.system("python setup.py sdist upload")
+os.remove('README.txt')
