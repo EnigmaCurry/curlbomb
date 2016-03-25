@@ -8,7 +8,7 @@ if os.path.exists('README.txt'):
     long_description=open('README.txt').read()
 
 setup(name='curlbomb',
-      version='1.0.7',
+      version='1.0.8',
       description=description,
       long_description=long_description,
       license="MIT",
