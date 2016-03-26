@@ -27,6 +27,7 @@ import sys
 import time
 import threading
 import subprocess
+import tempfile
 from io import BytesIO
 from collections import defaultdict
 import uuid
@@ -143,7 +144,23 @@ class CurlBomb(http.server.BaseHTTPRequestHandler):
         httpd.ssh_conn = ssh_conn
         
         if ssl_cert is not None:
-            httpd.socket = ssl.wrap_socket(httpd.socket, certfile=ssl_cert, server_side=True)
+            with open(ssl_cert, 'br') as cert_file:
+                cert = cert_file.read()
+                if cert.startswith(b'-----BEGIN PGP MESSAGE-----'):
+                    # Decrypt PGP encrypted certfile:
+                    with subprocess.Popen(['gpg','-d'], stdin=subprocess.PIPE, stdout=subprocess.PIPE) as p:
+                        p.stdin.write(cert)
+                        decrypted_cert, err = p.communicate()
+                        # Create temporary file to store decrypted cert.
+                        # This isn't the most secure method I can think of, but I can't see another
+                        # way as the low-level openssl api requires a file and will not accept a string
+                        # or file like object.
+                        with tempfile.NamedTemporaryFile('wb') as temp_cert:
+                            temp_cert.write(decrypted_cert)
+                            del decrypted_cert
+                            httpd.socket = ssl.wrap_socket(httpd.socket, certfile=temp_cert.name, server_side=True)
+                else:
+                    httpd.socket = ssl.wrap_socket(httpd.socket, certfile=ssl_cert, server_side=True)
         if verbose:
             knock = ""
             if handler.require_knock:
