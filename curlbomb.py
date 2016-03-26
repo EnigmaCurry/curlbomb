@@ -33,7 +33,7 @@ from collections import defaultdict
 import uuid
 import argparse
 
-__version__ = "1.0.14"
+__version__ = "1.0.15"
 
 ssh_tunnel = None
 
