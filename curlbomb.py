@@ -33,7 +33,7 @@ from collections import defaultdict
 import uuid
 import argparse
 
-__version__ = "1.0.12"
+__version__ = "1.0.13"
 
 ssh_tunnel = None
 
@@ -251,10 +251,10 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('-c', dest="command", help="The the shell command to curlbomb into (default is to detect #!interpreter)", default="AUTO")
     parser.add_argument('-w', dest="wget", help="Output wget command rather than curl", action="store_true")
     parser.add_argument('--ssh', metavar="SSH_FORWARD", help="Forward curlbomb through another host via SSH - [user@]host[:ssh_port][:http_port]", default=None)
-    parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate")
+    parser.add_argument('--ssl', metavar="CERTIFICATE", help="Use SSL with the given certificate file (optionally PGP encrypted)")
     parser.add_argument('--mime-type', help="The content type to serve", default="text/plain")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run", action="store_true")
-    parser.add_argument('--version', help="Print curlbomb version", action="store_true")
+    parser.add_argument('--version', action="version", version=__version__)
     parser.add_argument('resource', metavar="FILE", help="File to serve (or don't specify for stdin)", nargs='?', default=sys.stdin)
     return parser
 
@@ -262,10 +262,6 @@ def main():
     parser = argparser()
     args = parser.parse_args()
 
-    if args.version:
-        print(__version__)
-        exit(0)
-    
     if args.resource == sys.stdin and sys.stdin.isatty():
         parser.print_help()
         print("\nYou must specify a file or pipe one to this command's stdin")
