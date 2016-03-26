@@ -1,0 +1,184 @@
+.TH curlbomb 1 2016\-03\-26
+.SH SYNOPSIS
+ \fBcurlbomb\fR [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
+         [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--mime-type MIME_TYPE]
+         [--survey] [--version]
+         [FILE]
+
+
+.SH DESCRIPTION
+
+.br
+
+.br
+A personal HTTP server for serving one\-time\-use shell scripts.
+.br
+
+.br
+You know all those docs for cool dev tools that start out by telling
+.br
+you to install their software in one line, like this?
+.br
+
+.br
+    bash <(curl \-s http://example.com/install.sh)
+.br
+
+.br
+I call that a curl bomb... I don't know if anyone else does.
+.br
+
+.br
+This script is an HTTP server that will serve that script to a client
+.br
+exactly once and then quit. Yea, you could just use "python \-m http.server", 
+.br
+really this is just a bit more than that.
+.br
+
+.br
+
+.SH EXAMPLES
+
+.br
+
+.br
+Serve a script stored in a file:
+.br
+
+.br
+    curlbomb /path/to/script
+.br
+	
+.br
+This outputs a curl command to run the script on another computer:
+.br
+
+.br
+    bash <(curl http://10.13.37.133:47601 \-H "X\-knock: c19fed96a78844b982053448e44060f9")
+.br
+
+.br
+You can also get the curl without the bomb by specifying \-\-survey.
+.br
+This outputs just the inner curl command, which is useful for testing.
+.br
+
+.br
+You can pipe scripts to stdin:
+.br
+
+.br
+    echo "pacman \-\-noconfirm \-S openssh && systemctl start sshd" | curlbomb
+.br
+	
+.br
+Or from shell scripts:
+.br
+
+.br
+    cat <<EOF | curlbomb
+.br
+    #!/bin/bash
+.br
+    echo "I'm a script output from another script on another computer"
+.br
+	EOF
+.br
+
+.br
+The shebang line is interpreted and automatically changes the curlbomb command:
+.br
+
+.br
+    cat <<EOF | curlbomb
+.br
+	#!/usr/bin/env python3
+.br
+	import this
+.br
+	print("Hello, from Python!")
+.br
+	EOF
+.br
+	
+.br
+Which outputs the following curlbomb, tailored for Python:
+.br
+
+.br
+    /usr/bin/env python3 <(curl http://10.13.37.133:55298 \-H "X\-knock: 3b4bc96e29754238a30c286d1c8173c7")
+.br
+
+.br
+You can switch to wget with \-w:
+.br
+
+.br
+    $ echo "apt\-get install curl" | curlbomb \-w
+.br
+	Client command:
+.br
+
+.br
+      bash <(wget \-q \-O \- http://10.13.37.133:57670 \-\-header="X\-knock: 5e5568bf44624e70a7490783acee150d")
+.br
+
+.br
+You can tunnel the curlbomb server through another host with \-\-ssh:
+.br
+
+.br
+    echo "apt\-get install emacs\-nox" | curlbomb \-\-ssh user@example.com:8080
+.br
+	
+.br
+The above command connects to example.com and forwards the curlbomb
+.br
+HTTP port to example.com:8080. Users on example.com will be able to
+.br
+fetch the resource from localhost:8080. If you want anyone in the
+.br
+world to be able to fetch example.com:8080 you will need to modify
+.br
+the sshd_config of the server to allow GatewayPorts:
+.br
+
+.br
+	# Put this in your /etc/ssh/sshd_config and restart your ssh service:
+.br
+    Gatewayports clientspecified
+.br
+
+.br
+
+.SH OPTIONS
+  FILE                  File to serve (or don't specify for stdin)
+
+  \fB-h\fR, \fB--help\fR
+                        show this help message and exit
+  \fB-k\fR, \fB--disable-knock\fR
+                        Don't require authentication (no X-knock header)
+  \fB-n\fR \fI\s-1NUM_GETS\s0\fR
+                        Number of times to serve resource (default:1)
+  \fB-p\fR \fI\s-1PORT\s0\fR
+                        TCP port number to use (default:random)
+  \fB-q\fR              Be quiet
+  \fB-c\fR \fI\s-1COMMAND\s0\fR
+                        The the shell command to curlbomb into (default is to
+                        detect #!interpreter)
+  \fB-w\fR              Output wget command rather than curl
+  \fB--ssh\fR SSH_FORWARD
+                        Forward curlbomb through another host via SSH -
+                        [user@]host[:ssh_port][:http_port]
+  \fB--ssl\fR CERTIFICATE
+                        Use SSL with the given certificate file (optionally
+                        PGP encrypted)
+  \fB--mime-type\fR \fI\s-1MIME_TYPE\s0\fR
+                        The content type to serve
+  \fB--survey\fR        Just a survey mission, no bomb run
+  \fB--version\fR       show program's version number and exit
+.SH DISTRIBUTION
+ The latest version of curlbomb may be downloaded from https://github.com/EnigmaCurry/curlbomb
+.SH AUTHORS
+ Ryan McGuire <ryan@enigmacurry.com>
