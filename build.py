@@ -24,7 +24,7 @@ short_description = os.popen("python setup.py --description").read().strip()
 homepage = os.popen("python setup.py --url").read().strip()
 authors = "{} <{}>".format(os.popen("python setup.py --author").read().strip(), os.popen("python setup.py --author-email").read().strip())
 
-build_manpage(argparser, 'curlbomb.1', appname, short_description, long_description, authors, homepage, pre_sections=[('examples',example_use)])
+build_manpage(argparser, 'curlbomb.1', appname, short_description, long_description, authors, homepage, pre_sections=[('examples',example_use),('options', arg_help)])
 
 if sys.argv[-1] == "upload":
     os.system("python setup.py sdist upload")

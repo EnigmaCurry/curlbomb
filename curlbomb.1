@@ -1,4 +1,4 @@
-.TH curlbomb 1 2016\-03\-26
+.TH curlbomb 1 2016\-03\-27
 .SH SYNOPSIS
  \fBcurlbomb\fR [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
          [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--mime-type MIME_TYPE]
@@ -59,13 +59,35 @@ This outputs a curl command to run the script on another computer:
 .br
 
 .br
-You can also get the curl without the bomb by specifying \-\-survey.
+The client must pass a X\-knock HTTP header by default. This is for two
 .br
-This outputs just the inner curl command, which is useful for testing.
+reasons:
 .br
 
 .br
-You can pipe scripts to stdin:
+ * It adds a factor of authentication. Requests without the knock are
+.br
+   denied.
+.br
+ * It prevents mistakes as the knock parameter is randomly generated each
+.br
+   time curlbomb is run. 
+.br
+
+.br
+You can disable the knock requirement with the \-k option. 
+.br
+
+.br
+If you want the curl, without the bomb, ie. you just want to grab the
+.br
+script without redirecting it to bash, use \-\-survey. This is useful
+.br
+for testing the retrieval of scripts without running them. 
+.br
+
+.br
+You can also pipe scripts directly into curlbomb:
 .br
 
 .br
@@ -87,7 +109,7 @@ Or from shell scripts:
 .br
 
 .br
-The shebang line is interpreted and automatically changes the curlbomb command:
+The shebang line (#!) is interpreted and automatically changes the curlbomb command:
 .br
 
 .br
@@ -111,7 +133,15 @@ Which outputs the following curlbomb, tailored for Python:
 .br
 
 .br
-You can switch to wget with \-w:
+You can use \-c to specify your own command if the shebang line is
+.br
+missing, or misidentified. "bash" is always used as a fallback.
+.br
+
+.br
+If your client doesn't have curl installed, you can switch to wget
+.br
+with \-w:
 .br
 
 .br
@@ -125,7 +155,15 @@ You can switch to wget with \-w:
 .br
 
 .br
-You can tunnel the curlbomb server through another host with \-\-ssh:
+By default, curlbomb serves from the local IP address. This usually
+.br
+means that clients on another network will be unable to retrieve
+.br
+anything from curlbomb, unless you have a port opened up through your
+.br
+firewall. As an alternative, curlbomb can be tunneled through SSH to
+.br
+another host that has the proper port open. For instance:
 .br
 
 .br
@@ -133,15 +171,19 @@ You can tunnel the curlbomb server through another host with \-\-ssh:
 .br
 	
 .br
-The above command connects to example.com and forwards the curlbomb
+The above command connects to example.com over SSH (port 22 by
 .br
-HTTP port to example.com:8080. Users on example.com will be able to
+default) and forwards the local curlbomb HTTP port to
 .br
-fetch the resource from localhost:8080. If you want anyone in the
+example.com:8080. This SSH tunnel is left open for as long as curlbomb
 .br
-world to be able to fetch example.com:8080 you will need to modify
+remains running. Any user on example.com will be able to fetch the
 .br
-the sshd_config of the server to allow GatewayPorts:
+resource from localhost:8080. If you want anyone in the world to be
+.br
+able to fetch example.com:8080 you will need to modify the sshd_config
+.br
+of the server to allow GatewayPorts:
 .br
 
 .br
@@ -151,33 +193,138 @@ the sshd_config of the server to allow GatewayPorts:
 .br
 
 .br
+For extra security, you can enable SSL with \-\-ssl:
+.br
+
+.br
+    echo "export PASSWORD=hunter2" | curlbomb \-c source \-\-ssl /path/to/cert.pem
+.br
+
+.br
+In the above example we are passing a bit of secure information, a
+.br
+password. curlbomb normally prevents access with a knock paramter, but
+.br
+the knock itself might be spied on through traffic analysis. Using SSL
+.br
+makes sure this doesn't happen. To prevent having to store the SSL
+.br
+certificate in plain text on your local machine, the file may be
+.br
+optionally PGP encrypted in an ascii\-armored file. This will be
+.br
+automatically decrypted if you are running a gpg\-agent.
+.br
+
+.br
 
 .SH OPTIONS
-  FILE                  File to serve (or don't specify for stdin)
 
-  \fB-h\fR, \fB--help\fR
-                        show this help message and exit
-  \fB-k\fR, \fB--disable-knock\fR
-                        Don't require authentication (no X-knock header)
-  \fB-n\fR \fI\s-1NUM_GETS\s0\fR
-                        Number of times to serve resource (default:1)
-  \fB-p\fR \fI\s-1PORT\s0\fR
-                        TCP port number to use (default:random)
-  \fB-q\fR              Be quiet
-  \fB-c\fR \fI\s-1COMMAND\s0\fR
-                        The the shell command to curlbomb into (default is to
-                        detect #!interpreter)
-  \fB-w\fR              Output wget command rather than curl
-  \fB--ssh\fR SSH_FORWARD
-                        Forward curlbomb through another host via SSH -
-                        [user@]host[:ssh_port][:http_port]
-  \fB--ssl\fR CERTIFICATE
-                        Use SSL with the given certificate file (optionally
-                        PGP encrypted)
-  \fB--mime-type\fR \fI\s-1MIME_TYPE\s0\fR
-                        The content type to serve
-  \fB--survey\fR        Just a survey mission, no bomb run
-  \fB--version\fR       show program's version number and exit
+.br
+
+.br
+    usage: curlbomb [\-h] [\-k] [\-n NUM_GETS] [\-p PORT] [\-q] [\-c COMMAND] [\-w]
+.br
+                    [\-\-ssh SSH_FORWARD] [\-\-ssl CERTIFICATE]
+.br
+                    [\-\-mime\-type MIME_TYPE] [\-\-survey]
+.br
+                    [FILE]
+.br
+    
+.br
+\fB\fC\-k\fR
+Don't require a X\-knock HTTP header from the client. Normally
+.br
+curlbombs are one\-time\-use and meant to be copy\-pasted from terminal
+.br
+to terminal. If you're embedding into a script, you may not know the
+.br
+knock parameter ahead of time and so this disables that. This is
+.br
+inherently less secure than the default.
+.br
+
+.br
+\fB\fC\-n NUM_GETS\fR
+The maximum number of times the script may be fetched by clients,
+.br
+defaults to 1. Increasing this may be useful in certain circumstances,
+.br
+but please note that the same knock parameter is used for all requests
+.br
+so this is inherently less secure than the default.
+.br
+
+.br
+\fB\fC\-p PORT\fR
+The local TCP  number to use
+.br
+
+.br
+\fB\fC\-q\fR
+Be quiet. Don't print the curlbomb.
+.br
+
+.br
+\fB\fC\-c COMMAND\fR
+Force the curlbomb shell command. By default, this is autodected
+.br
+from the first line of the script, called the shebang (#!). If none
+.br
+can be detected, and one is not provided, the fallback of "bash" is
+.br
+used.
+.br
+
+.br
+\fB\fC\-\-survey\fR
+Only print the curl (or wget) command. Don't redirect to a
+.br
+shell command. Useful for testing out script retrieval without running
+.br
+them. 
+.br
+
+.br
+\fB\fC\-w\fR
+Print wget syntax rather than curl syntax. Useful in the case
+.br
+where the client doesn't have curl installed.
+.br
+
+.br
+\fB\fC\-\-ssh SSH_FORWARD\fR
+Forwards the curlbomb server to a remote port of another
+.br
+computer through SSH. This is useful to serve curlbombs to clients on
+.br
+another network without opening up any ports to the machine running
+.br
+curlbomb. The syntax for SSH_FORWARD is [user@]host[:ssh_port][:http_port].
+.br
+
+.br
+\fB\fC\-\-ssl CERTIFICATE\fR
+Full server to client http encryption using
+.br
+SSL. Give the full path to your SSL certificate, optionally PGP
+.br
+(ascii\-armored) encrypted.
+.br
+
+.br
+\fB\fC\-\-mime\-type MIME_TYPE\fR
+The mime\-type header to send, by default "text/plain"
+.br
+
+.br
+\fB\fCFILE\fR
+The script or other resource to serve via curlbomb. You can
+.br
+also not specify this and the resource will be read from stdin.
+.br
+
 .SH DISTRIBUTION
  The latest version of curlbomb may be downloaded from https://github.com/EnigmaCurry/curlbomb
 .SH AUTHORS

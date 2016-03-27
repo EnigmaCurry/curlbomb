@@ -12,6 +12,7 @@ from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 from distutils.command.build import build
 import argparse
+import re
 
 def build_manpage(parser, output, appname, description, long_description, authors, homepage, pre_sections=[]):
     argparser = parser(formatter_class=ManPageFormatter)
@@ -131,6 +132,7 @@ class ManPageFormatter(argparse.HelpFormatter):
 
     def _mk_section(self, name, content):
         content = content.replace('\n', '\n.br\n')
+        content = re.sub(r"`(.*)` ", r"\\fB\\fC\1\\fR\n", content)
         return '.SH %s\n%s\n' % (name.upper(), self._markup(content))
 
     def _mk_footer(self, sections):
@@ -151,7 +153,7 @@ class ManPageFormatter(argparse.HelpFormatter):
         page.append(self._mk_description())
         for name, content in self._pre_sections:
             page.append(self._mk_section(name, content))
-        page.append(self._mk_options(parser))
+        #page.append(self._mk_options(parser))
         page.append(self._mk_footer(self._ext_sections))
 
         return ''.join(page)
