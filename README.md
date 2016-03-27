@@ -130,7 +130,7 @@ defaults to 1. Increasing this may be useful in certain circumstances,
 but please note that the same knock parameter is used for all requests
 so this is inherently less secure than the default.
 
-`-p PORT` The local TCP  number to use
+`-p PORT` The local TCP port number to use
 
 `-q` Be quiet. Don't print the curlbomb.
 
