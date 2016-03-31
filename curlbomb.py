@@ -274,9 +274,9 @@ def get_curlbomb_command(settings, unwrapped=None):
                         hostname_header=hostname_header
                     )
         else:
-            logger = ""    
+            logger = ""
 
-        if settings['shell_command'] is None:
+        if settings['shell_command'] is None or settings['survey']:
             cmd = "{http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
                   format(
                       http_fetcher=settings['http_fetcher'],
@@ -447,6 +447,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('--survey', help="Just a survey mission, no bomb run "
                         "(just get the script, don't run it)", action="store_true")
     parser.add_argument('--unwrapped', help="Get the unwrapped version of the curlbomb (1 less server request, but longer command)", action="store_true")
+    parser.add_argument('--disable-postback', help="Do not post client output back to the server", action="store_true")
     parser.add_argument('--client-logging', dest="client_logging",
                         help="Enable client execution log (curlbomb.log on client)",
                         action="store_true")
@@ -509,6 +510,9 @@ def parse_args(args=None):
         settings['receive_postbacks'] = False
         settings['client_logging'] = False
 
+    if args.disable_postback:
+        settings['receive_postbacks'] = False
+        
     if settings['unwrapped']:
         # Output the unrwapped version of the curlbomb Without this
         # setting, curlbomb usually outputs a url that retrieves a
