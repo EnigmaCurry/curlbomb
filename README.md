@@ -1,6 +1,6 @@
 # curlbomb 
 
-curlbomb is an HTTP server for serving one-time-use shell scripts
+curlbomb is an HTTP(s) server for serving one-time-use shell scripts.
 
 You know all those docs for cool dev tools that start out by telling
 you to install their software in one line, like this?
@@ -9,9 +9,16 @@ you to install their software in one line, like this?
 
 I call that a curl bomb... I don't know if anyone else does.
 
-This script is an HTTP server that will serve that script to a client
-exactly once and then quit. Yea, you could just use "python -m http.server", 
-really this is just a bit more than that.
+curlbomb reads a file, or from stdin, and then serves it one time to
+the first client to retrieve it. A command is printed out that will
+construct the curl bomb the client needs to run, which includes a
+one-time-use passphrase (called a knock) required to download the
+resource. This command is copied and run in another shell, on some
+other computer, to download and run the script in one line.
+
+curlbomb has optional integration with OpenSSH to make it easy to
+curlbomb from anywhere on the internet, to anywhere else, through a
+proxy server that you can forward the port through.
 
 ## Install
 
@@ -31,7 +38,7 @@ Serve a script stored in a file:
 	
 This outputs a curl command to run the script on another computer:
 
-    KNOCK='nDnXXp8jkZKtbush' bash <(curl -LSs http://10.13.37.133:48690)
+    KNOCK='nDnXXp8jkZKtbush' bash <(curl -LSs http://192.0.2.100:48690)
 
 By default, the client must pass a KNOCK variable that is passed in
 the HTTP headers. This is for two reasons:
