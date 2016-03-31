@@ -226,7 +226,14 @@ def get_wrapped_curlbomb_command(settings):
     requires KNOCK environment variable"""
 
     if settings['survey']:
-        cmd = "{http_fetcher} http{ssl}://{host}:{port}"
+        if settings['require_knock']:
+            if settings['http_fetcher'].startswith("wget"):
+                knock_header = ' --header="X-knock: {}"'.format(settings['knock'])
+            else:
+                knock_header = ' -H "X-knock: {}"'.format(settings['knock'])
+        else:
+            knock_header=''
+        cmd = "{http_fetcher} http{ssl}://{host}:{port}/r" + knock_header
     else:
         cmd = "{knock}bash <({http_fetcher} http{ssl}://{host}:{port})"
         
@@ -235,7 +242,7 @@ def get_wrapped_curlbomb_command(settings):
           ssl="s" if settings['ssl'] is not None else "",
           host=settings['display_host'],
           port=settings['display_port'],
-          knock="KNOCK='{}' ".format(settings['knock']) if settings['require_knock'] else ''
+          knock="KNOCK='{}' ".format(settings['knock']) if settings['require_knock'] else '',
       )
 
 def get_curlbomb_command(settings):
@@ -486,6 +493,11 @@ def parse_args(args=None):
     if settings['require_knock']:
         settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
                                              altchars=b'_.').decode("utf-8")
+
+    if settings['survey']:
+        # Don't recieve post backs in survey mode:
+        settings['receive_postbacks'] = False
+        settings['client_logging'] = False
         
     #Detect if the input has a shebang so we can detect the shell command to display
     if args.command == "AUTO":
