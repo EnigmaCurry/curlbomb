@@ -221,99 +221,107 @@ class SSHRemoteForward(threading.Thread):
         self.join()
         log.info("SSH connection closed: {}".format(self.host))
 
-def get_wrapped_curlbomb_command(settings):
-    """curlbomb command to run a nested curlbomb that 
-    requires KNOCK environment variable"""
+def get_curlbomb_command(settings, unwrapped=None):
+    """Get the curlbomb command
 
-    if settings['survey']:
+    Inspects settings['unwrapped'] and returns the full curlbomb
+    command if True. A wrapper script is returned in the default case.
+    
+    Alternatively, you can pass unwrapped=True to force getting the
+    unwrapped script.
+    """
+    if (settings['unwrapped'] and unwrapped is not False) or unwrapped is True:
+        # Get the full unwrapped command:
         if settings['require_knock']:
-            if settings['http_fetcher'].startswith("wget"):
-                knock_header = ' --header="X-knock: {}"'.format(settings['knock'])
+            if settings.get('require_knock_from_environment', False):
+                # Don't output the actual knock code, but the shell variable name:
+                k = "$KNOCK"
             else:
-                knock_header = ' -H "X-knock: {}"'.format(settings['knock'])
+                k = settings['knock']
+            if settings['http_fetcher'].startswith("wget"):
+                knock = ' --header="X-knock: {}"'.format(k)
+            else:
+                knock = ' -H "X-knock: {}"'.format(k)
         else:
-            knock_header=''
-        cmd = "{http_fetcher} http{ssl}://{host}:{port}/r" + knock_header
-    else:
-        cmd = "{knock}bash <({http_fetcher} http{ssl}://{host}:{port})"
-        
-    return cmd.format(
-          http_fetcher=settings['http_fetcher'],
-          ssl="s" if settings['ssl'] is not None else "",
-          host=settings['display_host'],
-          port=settings['display_port'],
-          knock="KNOCK='{}' ".format(settings['knock']) if settings['require_knock'] else '',
-      )
+            knock = ""
 
-def get_curlbomb_command(settings):
-    """Get the nested curlbomb command"""
-    if settings['require_knock']:
-        if settings.get('require_knock_from_environment', False):
-            # Don't output the actual knock code, but the shell variable name:
-            k = "$KNOCK"
+        if settings['require_hostname_header']:
+            if settings['http_fetcher'].startswith("wget"):
+                hostname_header = ' --header="X-hostname: $(hostname)"'
+            else:
+                hostname_header = ' -H "X-hostname: $(hostname)"'
         else:
-            k = settings['knock']
-        if settings['http_fetcher'].startswith("wget"):
-            knock = ' --header="X-knock: {}"'.format(k)
+            hostname_header = ""
+
+        if settings['client_logging'] or settings['receive_postbacks']:
+            logger = " | tee"
+
+            if settings['client_logging']:
+                logger += "curlbomb.log"
+
+            if settings['receive_postbacks']:
+                callback_cmd=" >(curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header})"
+                if settings['wget']:
+                    callback_cmd = (
+                        ' && wget -q -O - --post-data="wget post-back finished. '
+                        'wget can\'t stream the client output like curl can though '
+                        ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
+                logger += callback_cmd.format(
+                        ssl="s" if settings['ssl'] is not None else "",
+                        host=settings['display_host'],
+                        port=settings['display_port'],
+                        knock=knock,
+                        hostname_header=hostname_header
+                    )
         else:
-            knock = ' -H "X-knock: {}"'.format(k)
-    else:
-        knock = ""
+            logger = ""    
 
-    if settings['require_hostname_header']:
-        if settings['http_fetcher'].startswith("wget"):
-            hostname_header = ' --header="X-hostname: $(hostname)"'
+        if settings['shell_command'] is None:
+            cmd = "{http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
+                  format(
+                      http_fetcher=settings['http_fetcher'],
+                      ssl="s" if settings['ssl'] is not None else "",
+                      host=settings['display_host'],
+                      port=settings['display_port'],
+                      knock=knock,
+                      hostname_header=hostname_header,
+                      logger=logger)
         else:
-            hostname_header = ' -H "X-hostname: $(hostname)"'
-    else:
-        hostname_header = ""
+            cmd = "{shell_command} <({http_fetcher} http{ssl}://{host}:{port}/r{knock}"\
+                  "{hostname_header}){logger}".format(
+                      http_fetcher=settings['http_fetcher'],
+                      shell_command=settings['shell_command'],
+                      ssl="s" if settings['ssl'] is not None else "",
+                      host=settings['display_host'],
+                      port=settings['display_port'],
+                      knock=knock,
+                      hostname_header=hostname_header,
+                      logger=logger)
 
-    if settings['client_logging'] or settings['receive_postbacks']:
-        logger = " | tee"
-        
-        if settings['client_logging']:
-            logger += "curlbomb.log"
-            
-        if settings['receive_postbacks']:
-            callback_cmd=" >(curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header})"
-            if settings['wget']:
-                callback_cmd = (
-                    ' && wget -q -O - --post-data="wget post-back finished. '
-                    'wget can\'t stream the client output like curl can though '
-                    ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
-            logger += callback_cmd.format(
-                    ssl="s" if settings['ssl'] is not None else "",
-                    host=settings['display_host'],
-                    port=settings['display_port'],
-                    knock=knock,
-                    hostname_header=hostname_header
-                )
+        return cmd
     else:
-        logger = ""    
+        # Get the wrapped version:
+        if settings['survey']:
+            if settings['require_knock']:
+                if settings['http_fetcher'].startswith("wget"):
+                    knock_header = ' --header="X-knock: {}"'.format(settings['knock'])
+                else:
+                    knock_header = ' -H "X-knock: {}"'.format(settings['knock'])
+            else:
+                knock_header=''
+            cmd = "{http_fetcher} http{ssl}://{host}:{port}/r" + knock_header
+        else:
+            cmd = "{knock}bash <({http_fetcher} http{ssl}://{host}:{port})"
 
-    if settings['shell_command'] is None:
-        cmd = "{http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
-              format(
-                  http_fetcher=settings['http_fetcher'],
-                  ssl="s" if settings['ssl'] is not None else "",
-                  host=settings['display_host'],
-                  port=settings['display_port'],
-                  knock=knock,
-                  hostname_header=hostname_header,
-                  logger=logger)
-    else:
-        cmd = "{shell_command} <({http_fetcher} http{ssl}://{host}:{port}/r{knock}"\
-              "{hostname_header}){logger}".format(
-                  http_fetcher=settings['http_fetcher'],
-                  shell_command=settings['shell_command'],
-                  ssl="s" if settings['ssl'] is not None else "",
-                  host=settings['display_host'],
-                  port=settings['display_port'],
-                  knock=knock,
-                  hostname_header=hostname_header,
-                  logger=logger)
+        return cmd.format(
+              http_fetcher=settings['http_fetcher'],
+              ssl="s" if settings['ssl'] is not None else "",
+              host=settings['display_host'],
+              port=settings['display_port'],
+              knock="KNOCK='{}' ".format(
+                  settings['knock']) if settings['require_knock'] else ''
+        )
 
-    return cmd
 
 def run_server(settings):
     settings['state'] = {'num_gets': 0, 'num_posts': 0, 'num_posts_in_progress': 0}
@@ -327,13 +335,12 @@ def run_server(settings):
         log_post_backs=settings['log_post_backs']
     )
 
-    # The outer non-nested curlbomb:
-    outer_curlbomb_command = 'time '+get_curlbomb_command(settings)
+    unwrapped_script = 'time '+get_curlbomb_command(settings, unwrapped=True)
 
     app = tornado.web.Application(
         [
             (r"/", CurlbombResourceWrapperRequestHandler,
-             dict(curlbomb_command=outer_curlbomb_command)),
+             dict(curlbomb_command=unwrapped_script)),
             (r"/r", CurlbombResourceRequestHandler, curlbomb_args),
             (r"/s", CurlbombStreamRequestHandler, curlbomb_args)
         ], default_handler_class=ErrorRequestHandler
@@ -388,7 +395,7 @@ def run_server(settings):
             log.error(httpd.ssh_conn.last_msg)
             sys.exit(1)
 
-    cmd = get_wrapped_curlbomb_command(settings)
+    cmd = get_curlbomb_command(settings)
     if not settings['quiet']:
         sys.stderr.write("Paste this command on the client:\n")
         sys.stderr.write("\n")
@@ -439,6 +446,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         "(optionally PGP encrypted)")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run "
                         "(just get the script, don't run it)", action="store_true")
+    parser.add_argument('--unwrapped', help="Get the unwrapped version of the curlbomb (1 less server request, but longer command)", action="store_true")
     parser.add_argument('--client-logging', dest="client_logging",
                         help="Enable client execution log (curlbomb.log on client)",
                         action="store_true")
@@ -474,7 +482,9 @@ def parse_args(args=None):
         'quiet': args.quiet and not args.verbose,
         'client_logging': args.client_logging,
         'require_knock_from_environment': True,
-        'wget': args.wget}
+        'wget': args.wget,
+        'unwrapped': args.unwrapped
+    }
     
     if args.verbose:
         log.setLevel(level=logging.INFO)
@@ -498,6 +508,13 @@ def parse_args(args=None):
         # Don't recieve post backs in survey mode:
         settings['receive_postbacks'] = False
         settings['client_logging'] = False
+
+    if settings['unwrapped']:
+        # Output the unrwapped version of the curlbomb Without this
+        # setting, curlbomb usually outputs a url that retrieves a
+        # wrapper script that wraps the longer more complicated client
+        # command. This will output this unrwapped version instead.
+        settings['require_knock_from_environment'] = False
         
     #Detect if the input has a shebang so we can detect the shell command to display
     if args.command == "AUTO":

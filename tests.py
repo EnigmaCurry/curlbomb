@@ -28,7 +28,7 @@ def get_curlbomb(args, script):
         else:
             args.append(s.name)    
         settings = curlbomb.parse_args(args)
-        client_cmd = curlbomb.get_wrapped_curlbomb_command(settings)
+        client_cmd = curlbomb.get_curlbomb_command(settings)
         curlbomb_thread = threading.Thread(target=curlbomb.run_server, args=(settings,))
         log.info("starting curlbomb: {}".format(args))
         curlbomb_thread.start()
@@ -96,3 +96,9 @@ def test_survey():
     
 def test_survey_wget():
     simple_runner('--survey -w', 'just text', 'just text')
+
+def test_unwrapped_command():
+    script, expected_out = client_scripts['short']
+    cb, client_cmd = get_curlbomb('--unwrapped -c source', script)
+    assert client_cmd.startswith('source ')
+    client_out, client_err = run_client(client_cmd, expected_out)
