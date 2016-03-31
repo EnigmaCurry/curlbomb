@@ -5,6 +5,12 @@ import sys
 from curlbomb import argparser
 from build_manpage import build_manpage
 import re
+import pytest
+
+# Run tests
+if pytest.main(args=[os.path.abspath("tests.py")]) != 0:
+    print("Tests failed, build aborted")
+    sys.exit(1)
 
 with open('README.txt','w+') as rst_file:
     with codecs.open('README.md', mode='r', encoding='utf-8') as markdown_file:

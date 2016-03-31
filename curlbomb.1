@@ -1,8 +1,8 @@
-.TH curlbomb 1 2016\-03\-27
+.TH curlbomb 1 2016\-03\-31
 .SH SYNOPSIS
- \fBcurlbomb\fR [-h] [-k] [-n NUM_GETS] [-p PORT] [-q] [-c COMMAND] [-w]
-         [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--mime-type MIME_TYPE]
-         [--survey] [--version]
+ \fBcurlbomb\fR [-h] [-k] [-n N] [-p PORT] [-c CMD] [-w] [-l] [-q] [-v]
+         [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey] [--client-logging]
+         [--mime-type MIME_TYPE] [--version]
          [FILE]
 
 
@@ -258,7 +258,7 @@ so this is inherently less secure than the default.
 
 .br
 \fB\fC\-p PORT\fR
-The local TCP  number to use
+The local TCP port number to use
 .br
 
 .br
@@ -325,7 +325,7 @@ The script or other resource to serve via curlbomb. You can
 also not specify this and the resource will be read from stdin.
 .br
 
-.SH AUTHORS
- Ryan McGuire <ryan@enigmacurry.com>
 .SH DISTRIBUTION
  The latest version of curlbomb may be downloaded from https://github.com/EnigmaCurry/curlbomb
+.SH AUTHORS
+ Ryan McGuire <ryan@enigmacurry.com>
