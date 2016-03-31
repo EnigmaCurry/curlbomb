@@ -9,11 +9,10 @@ import sys
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 import logging
+import socket
 
 log = logging.getLogger("curlbomb.test")
 log.setLevel(level=logging.INFO)
-
-## TODO: Finish these tests... they don't work yet
 
 def get_curlbomb(args, script):
     """Prepare curlbomb to run in a thread
@@ -54,13 +53,18 @@ def run_client(client_cmd, expected_out, expected_err=None):
 
 client_scripts = {
     'long': ("echo 'start' && sleep 3 && echo 'done'", "start\ndone\n"),
-    'short': ("echo 'hello'", "hello\n")
+    'short': ("echo 'hello'", "hello\n"),
+    'python': ("#!/usr/bin/env python3\nprint(2+2)","4\n"),
+    'python_no_shebang': ("print(2+2)","4\n")
+    
 }
 
-def test_default_args():
-    script, expected_out = client_scripts['short']
-    cb, client_cmd = get_curlbomb('', script)
+def simple_runner(args, script, expected_out):
+    cb, client_cmd = get_curlbomb(args, script)
     client_out, client_err = run_client(client_cmd, expected_out)
+
+def test_default_args():
+    simple_runner('', *client_scripts['short'])
 
 def test_multi_gets():
     script, expected_out = client_scripts['short']
@@ -70,4 +74,20 @@ def test_multi_gets():
     # Run a fifth time should fail:
     run_client(client_cmd, '', re.compile("^curl.*Connection refused"))
 
+def test_specific_port():
+    # Get a random free port:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('',0))
+    port = s.getsockname()[1]
+    s.close()
+    simple_runner('-p {}'.format(port), *client_scripts['short'])
+    
+def test_python():
+    simple_runner('', *client_scripts['python'])
+
+def test_alternate_command():
+    simple_runner('-c python', *client_scripts['python_no_shebang'])
+
+def test_wget():
+    simple_runner('-w', *client_scripts['short'])
 
