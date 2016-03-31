@@ -91,3 +91,8 @@ def test_alternate_command():
 def test_wget():
     simple_runner('-w', *client_scripts['short'])
 
+def test_survey():
+    simple_runner('--survey', 'just text', 'just text')
+    
+def test_survey_wget():
+    simple_runner('--survey -w', 'just text', 'just text')
