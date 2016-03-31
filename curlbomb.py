@@ -39,7 +39,13 @@ logging.basicConfig()
 log = logging.getLogger('curlbomb')
 log.setLevel(level=logging.WARN)
 
-__version__ = "1.1.0"
+def get_version():
+    import pkg_resources
+    pkg = pkg_resources.get_distribution('curlbomb')
+    if __file__.startswith(pkg.location):
+        return pkg.version
+    else:
+        return 'DEV'
 
 class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     """Base RequestHandler
@@ -387,6 +393,7 @@ def run_server(settings):
     except KeyboardInterrupt:
         pass
     finally:
+        httpd.stop()
         if httpd.ssh_conn is not None:
             httpd.ssh_conn.kill()
         settings['resource'].close()
@@ -430,7 +437,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         action="store_true")
     parser.add_argument('--mime-type', help="The content type to serve",
                         default="text/plain")
-    parser.add_argument('--version', action="version", version=__version__)
+    parser.add_argument('--version', action="version", version=get_version())
     parser.add_argument('resource', metavar="FILE", nargs='?', default=sys.stdin,
                         help="File to serve (or don't specify for stdin)")
     return parser
@@ -440,30 +447,28 @@ def parse_args(args=None):
     
     Return a new dictionary containing all args and settings
     """
-    default_settings = {
-        'receive_postbacks': True,
-        'shell_command': 'bash',
-        'http_fetcher': 'curl -LSs',
-        'mime_type': 'text/plain',
-        'require_hostname_header': True,
-        'log_post_backs': False,
-        'ssl': None,
-        'num_gets': 1,
-        'require_knock': True,
-        'knock': None,
-        'verbose': False,
-        'survey': False,
-        'ssh': None,
-        'quiet': False,
-        'client_logging': False,
-        'require_knock_from_environment': True,
-        'wget': False}
-
     parser = argparser()    
     args = parser.parse_args(args)
-    settings = dict(default_settings)
+
+    settings = {
+        'receive_postbacks': True,
+        'shell_command': args.command,
+        'http_fetcher': 'curl -LSs',
+        'mime_type': args.mime_type,
+        'require_hostname_header': True,
+        'log_post_backs': args.log_post_backs,
+        'ssl': args.ssl,
+        'num_gets': args.num_gets,
+        'require_knock': not args.disable_knock,
+        'knock': None,
+        'verbose': args.verbose,
+        'survey': args.survey,
+        'ssh': args.ssh,
+        'quiet': args.quiet and not args.verbose,
+        'client_logging': args.client_logging,
+        'require_knock_from_environment': True,
+        'wget': args.wget}
     
-    settings['quiet'] = args.quiet
     if args.verbose:
         log.setLevel(level=logging.INFO)
         settings['log_post_backs'] = True
@@ -478,7 +483,6 @@ def parse_args(args=None):
     else:
         settings['resource'] = open(args.resource, 'br')
 
-    settings['require_knock'] = not args.disable_knock
     if settings['require_knock']:
         settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
                                              altchars=b'_.').decode("utf-8")
@@ -491,8 +495,6 @@ def parse_args(args=None):
             settings['shell_command'] = line[2:].decode("utf-8").rstrip()
         else:
             settings['shell_command'] = "bash"
-    else:
-        settings['shell_command'] = args.command
 
     if args.wget:
         settings['http_fetcher'] = "wget -q -O -"

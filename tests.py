@@ -8,39 +8,66 @@ import curlbomb
 import sys
 from io import BytesIO
 from tempfile import NamedTemporaryFile
+import logging
+
+log = logging.getLogger("curlbomb.test")
+log.setLevel(level=logging.INFO)
 
 ## TODO: Finish these tests... they don't work yet
 
-def run_curlbomb(args):
-    """Run curlbomb for testing purposes
-    
-    - Start the server with the given args
-    - Run client
-    - Return output from curlbomb and client
+def get_curlbomb(args, script):
+    """Prepare curlbomb to run in a thread
+
+    Returns tuple(curlbomb_thread, client_command)
     """
-    settings = curlbomb.parse_args(args)
-    curlbomb_cmd = curlbomb.get_wrapped_curlbomb_command(settings)
-    
-    threading.Thread(target=curlbomb.run_server, args=(settings,)).start()
-    
-    client_proc = subprocess.Popen(curlbomb_cmd, shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-    client_out = client_proc.communicate()[0]
-    return client_out
+    with NamedTemporaryFile() as s:
+        s.write(bytes(script, "utf-8"))
+        s.flush()
+        if type(args) == str:
+            args += " {file}".format(file=s.name)
+            args = shlex.split(args)
+        else:
+            args.append(s.name)    
+        settings = curlbomb.parse_args(args)
+        client_cmd = curlbomb.get_wrapped_curlbomb_command(settings)
+        curlbomb_thread = threading.Thread(target=curlbomb.run_server, args=(settings,))
+        log.info("starting curlbomb: {}".format(args))
+        curlbomb_thread.start()
+        return (curlbomb_thread,
+                client_cmd)
+
+def run_client(client_cmd, expected_out, expected_err=None):
+    # Have to run explicitly in bash to get subprocesses to work:
+    client_cmd = ['bash','-c',client_cmd]
+    log.info("starting client: {}".format(client_cmd))
+    client_proc = subprocess.Popen(client_cmd, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+    client_out, client_err = client_proc.communicate()
+    client_out = client_out.decode("utf-8")
+    client_err = client_err.decode("utf-8")
+    log.info('client out: {}'.format(repr(client_out)))
+    assert client_out == expected_out
+    if expected_err:
+        assert expected_err.search(client_err) is not None
+
+    return client_out, client_err
 
 client_scripts = {
-    'long': b"echo 'start' && sleep 3 && echo 'done'",
-    'short': b"echo 'hello'"
+    'long': ("echo 'start' && sleep 3 && echo 'done'", "start\ndone\n"),
+    'short': ("echo 'hello'", "hello\n")
 }
-    
-command_args = {
-    'default': ('-q', client_scripts['long'])
-}
-    
-def test_commands():
-    for name, (args, script) in command_args.items():
-        with NamedTemporaryFile() as f:
-            f.write(script)
-            f.flush()
-            client_out = run_curlbomb(shlex.split("{} {}".format(args, f.name)))
-        print(client_out)
+
+def test_default_args():
+    script, expected_out = client_scripts['short']
+    cb, client_cmd = get_curlbomb('', script)
+    client_out, client_err = run_client(client_cmd, expected_out)
+
+def test_multi_gets():
+    script, expected_out = client_scripts['short']
+    cb, client_cmd = get_curlbomb('-v -n 4', script)
+    for x in range(4):
+        run_client(client_cmd, expected_out)
+    # Run a fifth time should fail:
+    run_client(client_cmd, '', re.compile("^curl.*Connection refused"))
+
+
