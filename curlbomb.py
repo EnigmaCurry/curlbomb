@@ -29,6 +29,7 @@ import subprocess
 import threading
 import tempfile
 import time
+from io import BytesIO
 
 import tornado.web
 import tornado.ioloop
@@ -90,7 +91,8 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
             num_post_backs = self._state['num_posts']
             # If we're still waiting for post backs:
             if self._allow_post_backs and num_post_backs < self._allowed_gets:
-                log.info("Waiting for {} more post backs from client".format(self._allowed_gets - num_post_backs))
+                log.info("Waiting for {} more post backs from client".format(
+                    self._allowed_gets - num_post_backs))
             else:
                 # Shutdown:
                 log.info("Served resource {} times. Done.".format(self._state['num_gets']))
@@ -120,7 +122,8 @@ class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
             # Client is not allowed to get any more:
             self.set_status(405)
             self.write(b"Client is not allowed to GET anymore\r\n")
-            log.info("Resource denied (max gets reached) to: {}".format(self.request.remote_ip))
+            log.info("Resource denied (max gets reached) to: {}".format(
+                self.request.remote_ip))
         self.finish()
         self._resource.seek(0)
         self.shutdown_if_ready()
@@ -132,7 +135,8 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
     def data_received(self, data):
         """Handle incoming PUT data"""
         if self._log_post_backs:
-            print("[{}]: {}".format(self.request.headers.get('X-hostname', ''), data.decode("utf-8")), end="")
+            print("[{}]: {}".format(self.request.headers.get('X-hostname', ''),
+                                    data.decode("utf-8")), end="")
 
     def put(self):
         """Finish streamed PUT request"""
@@ -140,17 +144,15 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
         self._state['num_posts'] += 1
         self.finish()
         self.shutdown_if_ready()
+
+    def post(self):
+        self.put()
         
     def prepare(self):
         CurlbombBaseRequestHandler.prepare(self)
         if not self._allow_post_backs:
             self.set_status(405)
             self.write(b"This server is not configured to allow data upload\r\n")
-            self.finish()
-            return
-        if self.request.headers.get('Transfer-Encoding', None) != "chunked":
-            self.send_response(400)
-            self.write(b"Content must be sent Transfer-Encoding: chunked\r\n")
             self.finish()
             return
         if (self._state['num_posts'] +
@@ -255,11 +257,18 @@ def get_curlbomb_command(settings):
 
     if settings['client_logging'] or settings['receive_postbacks']:
         logger = " | tee"
+        
         if settings['client_logging']:
             logger += "curlbomb.log"
+            
         if settings['receive_postbacks']:
-            logger +=" >(curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header})".\
-                format(
+            callback_cmd=" >(curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header})"
+            if settings['wget']:
+                callback_cmd = (
+                    ' && wget -q -O - --post-data="wget post-back finished. '
+                    'wget can\'t stream the client output like curl can though '
+                    ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
+            logger += callback_cmd.format(
                     ssl="s" if settings['ssl'] is not None else "",
                     host=settings['display_host'],
                     port=settings['display_port'],
@@ -280,8 +289,8 @@ def get_curlbomb_command(settings):
                   hostname_header=hostname_header,
                   logger=logger)
     else:
-        cmd = "{shell_command} <({http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}){logger}"\
-              .format(
+        cmd = "{shell_command} <({http_fetcher} http{ssl}://{host}:{port}/r{knock}"\
+              "{hostname_header}){logger}".format(
                   http_fetcher=settings['http_fetcher'],
                   shell_command=settings['shell_command'],
                   ssl="s" if settings['ssl'] is not None else "",
@@ -367,10 +376,11 @@ def run_server(settings):
             sys.exit(1)
 
     cmd = get_wrapped_curlbomb_command(settings)
-    sys.stderr.write("Paste this command on the client:\n")
-    sys.stderr.write("\n")
-    sys.stderr.write("  {}\n".format(cmd))
-    sys.stderr.write("\n")
+    if not settings['quiet']:
+        sys.stderr.write("Paste this command on the client:\n")
+        sys.stderr.write("\n")
+        sys.stderr.write("  {}\n".format(cmd))
+        sys.stderr.write("\n")
             
     try:
         tornado.ioloop.IOLoop.current().start()
@@ -425,15 +435,35 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         help="File to serve (or don't specify for stdin)")
     return parser
                 
-def parse_args():
+def parse_args(args=None):
     """Parse args and set other settings based on them
     
     Return a new dictionary containing all args and settings
     """
-    parser = argparser()
-    args = parser.parse_args()
-    settings = dict(args.__dict__)
+    default_settings = {
+        'receive_postbacks': True,
+        'shell_command': 'bash',
+        'http_fetcher': 'curl -LSs',
+        'mime_type': 'text/plain',
+        'require_hostname_header': True,
+        'log_post_backs': False,
+        'ssl': None,
+        'num_gets': 1,
+        'require_knock': True,
+        'knock': None,
+        'verbose': False,
+        'survey': False,
+        'ssh': None,
+        'quiet': False,
+        'client_logging': False,
+        'require_knock_from_environment': True,
+        'wget': False}
 
+    parser = argparser()    
+    args = parser.parse_args(args)
+    settings = dict(default_settings)
+    
+    settings['quiet'] = args.quiet
     if args.verbose:
         log.setLevel(level=logging.INFO)
         settings['log_post_backs'] = True
@@ -448,12 +478,10 @@ def parse_args():
     else:
         settings['resource'] = open(args.resource, 'br')
 
-    settings['require_knock'] = not settings['disable_knock']
+    settings['require_knock'] = not args.disable_knock
     if settings['require_knock']:
         settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
                                              altchars=b'_.').decode("utf-8")
-    else:
-        settings['knock'] = None
         
     #Detect if the input has a shebang so we can detect the shell command to display
     if args.command == "AUTO":
@@ -466,15 +494,12 @@ def parse_args():
     else:
         settings['shell_command'] = args.command
 
-    # Wire the client to send it's output back to us:
-    settings['receive_postbacks'] = True
-    settings['require_hostname_header'] = True
-    settings['require_knock_from_environment'] = True
-    
     if args.wget:
         settings['http_fetcher'] = "wget -q -O -"
-    else:
-        settings['http_fetcher'] = "curl -LSs"
+        if args.log_post_backs:
+            print("wget can't stream the client output, so --log-posts is not "
+                  "supported in wget mode")
+            sys.exit(1)
 
     if args.port == "random":
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -506,7 +531,7 @@ def parse_args():
             settings['ssh_user'], settings['display_host'] = ssh_host.split('@')
         else:
             settings['display_host'] = ssh_host
-                
+
     return settings
 
 def main():
