@@ -135,6 +135,12 @@ in plain text on your local machine, the file may be optionally PGP
 encrypted (ascii-armored) and curlbomb will decrypt it only when
 necessary.
 
+By now the curlbomb command might be getting quite long. Once you've
+encrypted and stored your SSL certificate, and setup your SSH server,
+create an alias for ease of use, for example:
+
+    alias curlbomb_public=curlbomb --ssl ~/.curlbomb/curlbomb.pem --ssh user@example.com:22:8080
+
 ## Command Line Args
 
     usage: curlbomb.py [-h] [-k] [-n N] [-p PORT] [-c CMD] [-w] [-l] [-q] [-v]
