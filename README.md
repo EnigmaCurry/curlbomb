@@ -53,11 +53,14 @@ the script that is being downloaded, not into the curl command. That's
 because it's really a curlbomb within a curlbomb. The first curl
 command downloads a script that includes a second curl command that
 *does* require the KNOCK parameter. This nesting allows us to keep the
-client command as short as possible and hide some extra boilerplate.)
+client command as short as possible and hide some extra
+boilerplate. See --unwrapped.)
 
 If you want the curl, without the bomb, ie. you just want to grab the
 script without redirecting it to bash, use --survey. This is useful
-for testing the retrieval of scripts without running them. 
+for testing the retrieval of scripts without running them (or as an
+ad-hoc way to copy files between two computers that don't have ssh
+setup.)
 
 You can also pipe scripts directly into curlbomb:
 
@@ -70,7 +73,7 @@ Or from shell scripts:
     echo "I'm a script output from another script on another computer"
 	EOF
 
-Or type in interactively:
+Or type it interactively:
 
     $ curlbomb -
 	pkg instll sqlite3
@@ -90,7 +93,7 @@ with -w:
 
     echo "apt-get install curl" | curlbomb -w
 
-By default, curlbomb serves from the IP address of the local
+By default, curlbomb constructs URLs with the IP address of the local
 machine. This usually means that clients on another network will be
 unable to retrieve anything from curlbomb, unless you have a port
 opened up through your firewall. As an alternative, curlbomb can be
@@ -101,11 +104,14 @@ open. For instance:
 	
 The above command connects to example.com over SSH (port 22 by
 default) and forwards the local curlbomb HTTP port to
-example.com:8080. This SSH tunnel is left open for as long as curlbomb
-remains running. Any user on example.com will be able to fetch the
-resource from localhost:8080. If you want anyone in the world to be
-able to fetch example.com:8080 you will need to modify the sshd_config
-of the server to allow GatewayPorts:
+example.com:8080. The URL that curlbomb prints out uses the domain
+name of the ssh server instead of the local IP address. The SSH tunnel
+is left open for as long as curlbomb remains running. Any user on
+example.com will be able to fetch the resource from
+localhost:8080. However, by default, SSH does not open this up to the
+rest of the world. If you want any client to be able to connect to
+example.com:8080 you will need to modify the sshd_config of the server
+to allow GatewayPorts:
 
 	# Put this in your /etc/ssh/sshd_config and restart your ssh service:
     Gatewayports clientspecified
@@ -114,16 +120,16 @@ For extra security, you can enable SSL with --ssl:
 
     echo "PASSWORD=hunter2 run_my_server" | curlbomb --ssl /path/to/cert.pem
 
-In the above example we are passing a bit of secure information, a
+In the above example we are passing a bit of secure information; a
 password. Even without SSL, curlbomb secures access with a knock
-paramter. For many use-cases, this is sufficient to secure it, as
-curlbombs are short lived and can only be retrieved once (-n 1). But
-the connection itself might be spied on through traffic analysis at
-your ISP or any other router your connection flows through. Using SSL
-makes sure this doesn't happen. To prevent having to store the SSL
-certificate in plain text on your local machine, the file may be
-optionally PGP encrypted (ascii-armored) and curlbomb will decrypt it
-only when necessary.
+parameter. For many use-cases, this is sufficient to secure it, as
+curlbombs are short lived and can only be retrieved one time (-n
+1). However, the connection itself might be spied on through traffic
+analysis at your ISP or any other router your connection flows
+through. Using SSL makes sure this doesn't happen. To prevent having
+to store the SSL certificate in plain text on your local machine, the
+file may be optionally PGP encrypted (ascii-armored) and curlbomb will
+decrypt it only when necessary.
 
 ## Command Line Args
 
@@ -133,16 +139,17 @@ only when necessary.
                        [--mime-type MIME_TYPE] [--version]
                        [FILE]
     
-`-k, --disable-knock` Don't require a X-knock HTTP header from the client. Normally
-curlbombs are one-time-use and meant to be copy-pasted from terminal
-to terminal. If you're embedding into a script, you may not know the
-knock parameter ahead of time and so this disables that. This is
-inherently less secure than the default.
+`-k, --disable-knock` Don't require a X-knock HTTP header from the
+client. Normally curlbombs are one-time-use and meant to be
+copy-pasted from terminal to terminal. If you're embedding into a
+script, you may not know the knock parameter ahead of time and so this
+disables that. This is inherently less secure than the default.
 
-`-n N, --num-gets N` The maximum number of times the script may be fetched by clients,
-defaults to 1. Increasing this may be useful in certain circumstances,
-but please note that the same knock parameter is used for all requests
-so this is inherently less secure than the default.
+`-n N, --num-gets N` The maximum number of times the script may be
+fetched by clients, defaults to 1. Increasing this may be useful in
+certain circumstances, but please note that the same knock parameter
+is used for all requests so this is inherently less secure than the
+default.
 
 `-p PORT` The local TCP port number to use
 
@@ -154,8 +161,8 @@ even with -c specified, so the client command will still show it as
 running in bash. The wrapped script will use the interpreter
 specified. See --unwrapped to change this behaviour.
 
-`-w, --wget` Print wget syntax rather than curl syntax. Useful in the case
-where the client doesn't have curl installed.
+`-w, --wget` Print wget syntax rather than curl syntax. Useful in the
+case where the client doesn't have curl installed.
 
 `-l, --log-posts` Log the client output from the curlbomb server. 
 
@@ -164,10 +171,11 @@ where the client doesn't have curl installed.
 `-v, --verbose` Be more verbose. Turns off --quiet, enables
 --log-posts, and enables INFO level logging within curlbomb.
 
-`--ssh SSH_FORWARD` Forwards the curlbomb server to a remote port of another
-computer through SSH. This is useful to serve curlbombs to clients on
-another network without opening up any ports to the machine running
-curlbomb. The syntax for SSH_FORWARD is [user@]host[:ssh_port][:http_port].
+`--ssh SSH_FORWARD` Forwards the curlbomb server to a remote port of
+another computer through SSH. This is useful to serve curlbombs to
+clients on another network without opening up any ports to the machine
+running curlbomb. The syntax for SSH_FORWARD is
+[user@]host[:ssh_port][:http_port].
 
 `--ssl CERTIFICATE` Full server to client http encryption using
 SSL. Give the full path to your SSL certificate, optionally PGP
@@ -176,7 +184,7 @@ certificate chain, including the CA certificate, if any.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
 shell command. Useful for testing out script retrieval without running
-them. 
+them.
 
 `--unwrapped` output the full curlbomb command, including all the
 boilerplate that curlbomb normally wraps inside of a nested curlbomb.
@@ -200,7 +208,8 @@ server. Note that --log-posts will have no effect with this enabled.
 `--client-logging` Logs all client output locally on the client to a
 file called curlbomb.log
 
-`--mime-type MIME_TYPE` The mime-type header to send, by default "text/plain"
+`--mime-type MIME_TYPE` The mime-type header to send, by default
+"text/plain"
 
 `--version` Print the curlbomb version
 
