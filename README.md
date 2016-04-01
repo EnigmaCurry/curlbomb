@@ -142,6 +142,8 @@ create an alias for ease of use, for example:
 
     alias curlbomb_public=curlbomb --ssl ~/.curlbomb/curlbomb.pem --ssh user@example.com:22:8080
 
+There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
+
 ## Command Line Args
 
     usage: curlbomb.py [-h] [-k] [-n N] [-p PORT] [-c CMD] [-d DOMAIN] [-w] [-l]
