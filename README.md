@@ -58,9 +58,7 @@ boilerplate. See --unwrapped.)
 
 If you want the curl, without the bomb, ie. you just want to grab the
 script without redirecting it to bash, use --survey. This is useful
-for testing the retrieval of scripts without running them (or as an
-ad-hoc way to copy files between two computers that don't have ssh
-setup.)
+for testing the retrieval of scripts without running them.
 
 You can also pipe scripts directly into curlbomb:
 
@@ -88,10 +86,13 @@ interpreter the client runs:
 	print("Hello, from Python!")
 	EOF
 
-If your client doesn't have curl installed, you can switch to wget
-with -w:
+Note that the resource curlbomb sends doesn't need to be a script at
+all. Here's a useful command to send a tarball of your private SSH
+keys to another client you're setting up:
 
-    echo "apt-get install curl" | curlbomb -w
+    tar cjh -C $HOME .ssh | curlbomb -c "tar xjv -f"
+
+The -c parameter tells the client what command to run the resource with. By specifying "tar xj -f" you are telling it to read the resource directly as a tarball and extract it.
 
 By default, curlbomb constructs URLs with the IP address of the local
 machine. This usually means that clients on another network will be
