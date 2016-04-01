@@ -86,8 +86,8 @@ interpreter the client runs:
 	print("Hello, from Python!")
 	EOF
 
-Note that the resource curlbomb sends doesn't need to be a script at
-all. Here's a useful command to send a tarball of your private SSH
+Note that the resource curlbomb sends doesn't need to be a
+script. Here's a useful command to send a tarball of your private SSH
 keys to another client you're setting up:
 
     tar cjh -C $HOME .ssh | curlbomb -c "tar xjv -f"
