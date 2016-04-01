@@ -418,24 +418,27 @@ def argparser(formatter_class=argparse.HelpFormatter):
         formatter_class=formatter_class)
     parser.add_argument('-k', '--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
-    parser.add_argument('-n', '--num-gets', dest="num_gets", metavar="N",
+    parser.add_argument('-n', '--num-gets', metavar="N",
                         help="Number of times to serve resource (default:1)",
                         type=int, default=1)
-    parser.add_argument('-p', '--port', dest="port", help="TCP port number to use "
+    parser.add_argument('-p', '--port',  help="TCP port number to use "
                         "(default:random available)",
                         default="random")
-    parser.add_argument('-c', '--command', dest="command", metavar="CMD",
+    parser.add_argument('-c', '--command', metavar="CMD",
                         help="The the shell command to curlbomb into "
                         "(default is to detect #!interpreter ie. the shebang)",
                         default="AUTO")
-    parser.add_argument('-w', '--wget', dest="wget",
+    parser.add_argument('-d','--domain', metavar="host[:port]",
+                        help="Provide the domain and port to display "
+                        "in the constructed URL. (example.com:8080)")
+    parser.add_argument('-w', '--wget', 
                         help="Output wget command rather than curl",
                         action="store_true")
     parser.add_argument('-l','--log-posts', dest="log_post_backs", action="store_true",
                         help="Log client stdout to server stdout")
-    parser.add_argument('-q', '--quiet', dest="quiet", action="store_true",
+    parser.add_argument('-q', '--quiet', action="store_true",
                         help="Be more quiet. Don't print the curlbomb command")
-    parser.add_argument('-v', '--verbose', dest="verbose", action="store_true",
+    parser.add_argument('-v', '--verbose', action="store_true",
                         help="Be more verbose. Enables --log-posts and print INFO logging")
     parser.add_argument('--ssh', metavar="SSH_FORWARD",
                         help="Forward curlbomb through another host via SSH - "
@@ -566,6 +569,13 @@ def parse_args(args=None):
             settings['ssh_user'], settings['display_host'] = ssh_host.split('@')
         else:
             settings['display_host'] = ssh_host
+
+    if args.domain:
+        # Override displayed host:port
+        parts = args.domain.split(":")
+        settings['display_host'] = parts[0]
+        if len(parts) > 1:
+            settings['display_port'] = parts[1]
 
     return settings
 

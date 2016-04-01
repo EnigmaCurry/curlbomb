@@ -143,10 +143,10 @@ create an alias for ease of use, for example:
 
 ## Command Line Args
 
-    usage: curlbomb.py [-h] [-k] [-n N] [-p PORT] [-c CMD] [-w] [-l] [-q] [-v]
-                       [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
-                       [--unwrapped] [--disable-postback] [--client-logging]
-                       [--mime-type MIME_TYPE] [--version]
+    usage: curlbomb.py [-h] [-k] [-n N] [-p PORT] [-c CMD] [-d DOMAIN] [-w] [-l]
+                       [-q] [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE]
+                       [--survey] [--unwrapped] [--disable-postback]
+                       [--client-logging] [--mime-type MIME_TYPE] [--version]
                        [FILE]
     
 `-k, --disable-knock` Don't require a X-knock HTTP header from the
@@ -172,6 +172,12 @@ that curlbomb will still wrap your script inside of bash, even with -c
 specified, so the client command will still show it as running in
 bash. The command you specified is put into the wrapped script. See
 --unwrapped to change this behaviour.
+
+`-d host[:port], --domain host[:port]` Specify the domain name and
+port that is displayed in the URL of the client command. This does not
+change where the resource is actually located, use --port or --ssh for
+that. This is useful if you are setting up your own port forwards and
+need to show an external URL.
 
 `-w, --wget` Print wget syntax rather than curl syntax. Useful in the
 case where the client doesn't have curl installed.
