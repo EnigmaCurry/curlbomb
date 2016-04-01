@@ -1,0 +1,10 @@
+1.1.2
+ * Removes formatting in --log-posts so that the text is exactly as the client sent it.
+
+1.1.1
+ * Adds --domain option to specify the domain name to display in the client command
+
+1.1.0
+ * Complete rewrite of curlbomb using Tornado
+
+
