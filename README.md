@@ -114,22 +114,25 @@ example.com:8080 you will need to modify the sshd_config of the server
 to allow GatewayPorts:
 
 	# Put this in your /etc/ssh/sshd_config and restart your ssh service:
-    Gatewayports clientspecified
+    GatewayPorts clientspecified
 
-For extra security, you can enable SSL with --ssl:
+For extra security, you can enable TLS with --ssl:
 
     echo "PASSWORD=hunter2 run_my_server" | curlbomb --ssl /path/to/cert.pem
 
-In the above example we are passing a bit of secure information; a
-password. Even without SSL, curlbomb secures access with a knock
+The example above is passing a bit of secure information; a
+password. Even without TLS, curlbomb secures access with a knock
 parameter. For many use-cases, this is sufficient to secure it, as
 curlbombs are short lived and can only be retrieved one time (-n
 1). However, the connection itself might be spied on through traffic
 analysis at your ISP or any other router your connection flows
-through. Using SSL makes sure this doesn't happen. To prevent having
-to store the SSL certificate in plain text on your local machine, the
-file may be optionally PGP encrypted (ascii-armored) and curlbomb will
-decrypt it only when necessary.
+through. Using TLS makes sure this doesn't happen. 
+
+Note that when combined with the --ssh parameter, the SSL certificate
+should be generated for that host rather than the one running
+curlbomb. To prevent having to store the SSL certificate in plain text
+on your local machine, the file may be optionally PGP encrypted
+(ascii-armored) and curlbomb will decrypt it only when necessary.
 
 ## Command Line Args
 
@@ -146,20 +149,22 @@ script, you may not know the knock parameter ahead of time and so this
 disables that. This is inherently less secure than the default.
 
 `-n N, --num-gets N` The maximum number of times the script may be
-fetched by clients, defaults to 1. Increasing this may be useful in
+fetched by clients, defaulting to 1. Increasing this may be useful in
 certain circumstances, but please note that the same knock parameter
 is used for all requests so this is inherently less secure than the
-default.
+default. Setting this to 0 will allow the resource to be downloaded an
+unlimited number of times.
 
-`-p PORT` The local TCP port number to use
+`-p PORT` The local TCP port number to use.
 
-`-c COMMAND` Force the curlbomb shell command. By default, this is
-autodected from the first line of the script, called the shebang
-(#!). If none can be detected, and one is not provided, the fallback
-of "bash" is used. Note that curlbomb wraps scripts inside of bash,
-even with -c specified, so the client command will still show it as
-running in bash. The wrapped script will use the interpreter
-specified. See --unwrapped to change this behaviour.
+`-c COMMAND` Set the name of the command that the curlbomb is run with
+on the client. By default, this is autodected from the first line of
+the script, called the shebang (#!). If none can be detected, and one
+is not provided by this setting, the fallback of "bash" is used. Note
+that curlbomb will still wrap your script inside of bash, even with -c
+specified, so the client command will still show it as running in
+bash. The command you specified is put into the wrapped script. See
+--unwrapped to change this behaviour.
 
 `-w, --wget` Print wget syntax rather than curl syntax. Useful in the
 case where the client doesn't have curl installed.
@@ -175,12 +180,14 @@ case where the client doesn't have curl installed.
 another computer through SSH. This is useful to serve curlbombs to
 clients on another network without opening up any ports to the machine
 running curlbomb. The syntax for SSH_FORWARD is
-[user@]host[:ssh_port][:http_port].
+[user@]host[:ssh_port][:http_port]. The SSH server must have the
+GatewayPorts (see: man sshd_config) setting turned on to allow remote
+clients to connect to this port.
 
-`--ssl CERTIFICATE` Full server to client http encryption using
-SSL. Give the full path to your SSL certificate, optionally PGP
-(ascii-armored) encrypted. The file should contain the entire
-certificate chain, including the CA certificate, if any.
+`--ssl CERTIFICATE` Run the HTTP server with TLS encryption. Give the
+full path to your SSL certificate, optionally PGP (ascii-armored)
+encrypted. The file should contain the entire certificate chain,
+including the CA certificate, if any.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
 shell command. Useful for testing out script retrieval without running
