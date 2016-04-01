@@ -129,11 +129,11 @@ analysis at your ISP or any other router your connection flows
 through. Using TLS makes sure this doesn't happen. 
 
 Note that when combined with the --ssh parameter, the SSL certificate
-should be generated for the host running the server rather than the
-one running curlbomb. To prevent having to store the SSL certificate
-in plain text on your local machine, the file may be optionally PGP
-encrypted (ascii-armored) and curlbomb will decrypt it only when
-necessary.
+should be generated for the host running the SSH server rather than
+the one running curlbomb. To prevent having to store the SSL
+certificate in plain text on your local machine, the file may be
+optionally PGP encrypted (ascii-armored) and curlbomb will decrypt it
+only when necessary.
 
 By now the curlbomb command might be getting quite long. Once you've
 encrypted and stored your SSL certificate, and setup your SSH server,
