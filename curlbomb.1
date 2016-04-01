@@ -1,4 +1,4 @@
-.TH curlbomb 1 2016\-03\-31
+.TH curlbomb 1 2016\-04\-01
 .SH SYNOPSIS
  \fBcurlbomb\fR [-h] [-k] [-n N] [-p PORT] [-c CMD] [-d host[:port]] [-w] [-l] [-q]
          [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey] [--unwrapped]
@@ -110,11 +110,7 @@ If you want the curl, without the bomb, ie. you just want to grab the
 .br
 script without redirecting it to bash, use \-\-survey. This is useful
 .br
-for testing the retrieval of scripts without running them (or as an
-.br
-ad\-hoc way to copy files between two computers that don't have ssh
-.br
-setup.)
+for testing the retrieval of scripts without running them.
 .br
 
 .br
@@ -170,13 +166,19 @@ interpreter the client runs:
 .br
 
 .br
-If your client doesn't have curl installed, you can switch to wget
+Note that the resource curlbomb sends doesn't need to be a
 .br
-with \-w:
+script. Here's a useful command to send a tarball of your private SSH
+.br
+keys to another client you're setting up:
 .br
 
 .br
-    echo "apt\-get install curl" | curlbomb \-w
+    tar cjh \-C $HOME .ssh | curlbomb \-c "tar xjv \-f"
+.br
+
+.br
+The \-c parameter tells the client what command to run the resource with. By specifying "tar xj \-f" you are telling it to read the resource directly as a tarball and extract it.
 .br
 
 .br
@@ -252,15 +254,15 @@ through. Using TLS makes sure this doesn't happen.
 .br
 Note that when combined with the \-\-ssh parameter, the SSL certificate
 .br
-should be generated for the host running the server rather than the
+should be generated for the host running the SSH server rather than
 .br
-one running curlbomb. To prevent having to store the SSL certificate
+the one running curlbomb. To prevent having to store the SSL
 .br
-in plain text on your local machine, the file may be optionally PGP
+certificate in plain text on your local machine, the file may be
 .br
-encrypted (ascii\-armored) and curlbomb will decrypt it only when
+optionally PGP encrypted (ascii\-armored) and curlbomb will decrypt it
 .br
-necessary.
+only when necessary.
 .br
 
 .br
@@ -273,6 +275,10 @@ create an alias for ease of use, for example:
 
 .br
     alias curlbomb_public=curlbomb \-\-ssl ~/.curlbomb/curlbomb.pem \-\-ssh user@example.com:22:8080
+.br
+
+.br
+There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 .br
 
 .br
@@ -439,7 +445,7 @@ current shell:
 .br
 Without the \-\-unwrapped option, the client command will not run the
 .br
-'source' command directly, but instead a bash script with a 'source'
+source command directly, but instead a bash script with a source
 .br
 inside it. This won't work for sourcing environment variables in your
 .br
