@@ -92,7 +92,9 @@ keys to another client you're setting up:
 
     tar cjh -C $HOME .ssh | curlbomb -c "tar xjv -f"
 
-The -c parameter tells the client what command to run the resource with. By specifying "tar xj -f" you are telling it to read the resource directly as a tarball and extract it.
+The -c parameter tells the client what command to run the resource
+with. By specifying "tar xj -f" you are telling it to read the
+resource directly as a tarball and extract it.
 
 By default, curlbomb constructs URLs with the IP address of the local
 machine. This usually means that clients on another network will be
