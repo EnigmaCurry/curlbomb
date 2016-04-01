@@ -141,8 +141,7 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
     def data_received(self, data):
         """Handle incoming PUT data"""
         if self._log_post_backs:
-            print("[{}]: {}".format(self.request.headers.get('X-hostname', ''),
-                                    data.decode("utf-8")), end="")
+            sys.stdout.buffer.write(data)
 
     def put(self):
         """Finish streamed PUT request"""
