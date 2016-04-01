@@ -9,7 +9,7 @@ I put the following stuff in my ~/.bashrc to setup aliases for common commands:
     alias cb="curlbomb --ssh ryan@example.com:8080 --ssl ~/.curlbomb/curlbomb.pem.gpg"
 
     # curlbomb to push a local file or directory to a client:
-    # Always put the argument in quotes. This allows pushing 
+    # Always put the argument in quotes to allow pushing 
     # multiple paths at the same time, as well as using globs.
     cb_put() {
         if [ -z "$1" ]; then
@@ -20,7 +20,7 @@ I put the following stuff in my ~/.bashrc to setup aliases for common commands:
     }
 
     # curlbomb to retrieve a remote file or directory from the client:
-    # Always put the argument in quotes. This allows retrieving
+    # Always put the argument in quotes to allow retrieving
     # multiple paths at the same time, as well as using globs. 
     # To reference remote variable names, make sure to use single quotes.
     cb_get() {
