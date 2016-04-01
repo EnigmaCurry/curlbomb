@@ -45,7 +45,7 @@ the HTTP headers. This is for two reasons:
 
  * It adds a factor of authentication. Requests without the knock are
    denied.
- * It helps to prevents mistakes, as the knock parameter is randomly
+ * It helps to prevent mistakes, as the knock parameter is randomly
    generated each time curlbomb is run and can only be used once. (-n 1)
 
 (Astute readers will notice that the KNOCK variable is being fed to
