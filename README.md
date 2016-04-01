@@ -215,7 +215,7 @@ current shell:
     echo "export PATH=/asdf/bin:$PATH" | curlbomb -c source --unwrapped --disable-postback
 
 Without the --unwrapped option, the client command will not run the
-'source' command directly, but instead a bash script with a 'source'
+source command directly, but instead a bash script with a source
 inside it. This won't work for sourcing environment variables in your
 shell, so use --unwrapped when you want to use
 source. --disable-postback prevents the command from being piped back
