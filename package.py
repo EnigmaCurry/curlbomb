@@ -36,5 +36,5 @@ if sys.argv[-1] == "upload":
     os.system("python setup.py sdist upload")
 else:
     os.system("python setup.py sdist")
-os.remove('README.txt')
+#os.remove('README.txt')
 #os.remove('curlbomb.1')

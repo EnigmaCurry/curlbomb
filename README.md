@@ -100,7 +100,7 @@ opened up through your firewall. As an alternative, curlbomb can be
 tunneled through SSH to another host that has the proper port
 open. For instance:
 
-    echo "apt-get install emacs-nox" | curlbomb --ssh user@example.com:8080
+    echo "apt-get install salt-minion" | curlbomb --ssh user@example.com:8080
 	
 The above command connects to example.com over SSH (port 22 by
 default) and forwards the local curlbomb HTTP port to
