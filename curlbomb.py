@@ -26,10 +26,13 @@ import logging
 import random
 import base64
 import subprocess
+import shlex
+import glob
 import threading
 import tempfile
 import time
 from io import BytesIO
+import re
 
 import tornado.web
 import tornado.ioloop
@@ -56,7 +59,8 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     """
     
     def initialize(self, resource, state, allowed_gets=1, knock=None,
-                   mime_type='text/plain', allow_post_backs=False, log_post_backs=False):
+                   mime_type='text/plain', allow_post_backs=False,
+                   log_post_backs=False, log_file=None):
         """Arguments:
         
           resource         - A file like object to serve the contents of
@@ -67,6 +71,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
           allow_post_backs - Allow client to post data back to the server. 
                              Delays server termination until post_backs == allowed_gets
           log_post_backs   - Log post backs to stdout
+          log_file         - Log post backs to file
           *args            - The rest of the RequestHandler args
           **kwargs         - The rest of the RequestHandler kwargs
         """
@@ -76,7 +81,8 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
         self._mime_type = mime_type
         self._allow_post_backs = allow_post_backs
         self._log_post_backs = log_post_backs
-
+        self._log_file = log_file
+        
         self._state = state
                 
     def prepare(self):
@@ -131,17 +137,19 @@ class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
             log.info("Resource denied (max gets reached) to: {}".format(
                 self.request.remote_ip))
         self.finish()
-        self._resource.seek(0)
+        if self._state['num_gets'] < self._allowed_gets:
+            self._resource.seek(0)
         self.shutdown_if_ready()
-
 
 @tornado.web.stream_request_body
 class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
-    """Stream output of script from client back to the server"""
+    """Stream output of script from client back to the server"""    
     def data_received(self, data):
         """Handle incoming PUT data"""
         if self._log_post_backs:
             sys.stdout.buffer.write(data)
+        if self._log_file:
+            self._log_file.write(data)
 
     def put(self):
         """Finish streamed PUT request"""
@@ -231,6 +239,7 @@ def get_curlbomb_command(settings, unwrapped=None):
     """
     if (settings['unwrapped'] and unwrapped is not False) or unwrapped is True:
         # Get the full unwrapped command:
+        knock = ""
         if settings['require_knock']:
             if settings.get('require_knock_from_environment', False):
                 # Don't output the actual knock code, but the shell variable name:
@@ -241,25 +250,23 @@ def get_curlbomb_command(settings, unwrapped=None):
                 knock = ' --header="X-knock: {}"'.format(k)
             else:
                 knock = ' -H "X-knock: {}"'.format(k)
-        else:
-            knock = ""
 
+        hostname_header = ""
         if settings['require_hostname_header']:
             if settings['http_fetcher'].startswith("wget"):
                 hostname_header = ' --header="X-hostname: $(hostname)"'
             else:
                 hostname_header = ' -H "X-hostname: $(hostname)"'
-        else:
-            hostname_header = ""
 
+        logger = ""
         if settings['client_logging'] or settings['receive_postbacks']:
-            logger = " | tee"
-
-            if settings['client_logging']:
-                logger += "curlbomb.log"
+            if not settings['client_quiet']:
+                logger = " | tee "
+                if settings['client_logging']:
+                    logger += "curlbomb.log"
 
             if settings['receive_postbacks']:
-                callback_cmd=" >(curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header})"
+                callback_cmd=" | curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header}"
                 if settings['wget']:
                     callback_cmd = (
                         ' && wget -q -O - --post-data="wget post-back finished. '
@@ -272,8 +279,6 @@ def get_curlbomb_command(settings, unwrapped=None):
                         knock=knock,
                         hostname_header=hostname_header
                     )
-        else:
-            logger = ""
 
         if settings['shell_command'] is None or settings['survey']:
             cmd = "{http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
@@ -331,7 +336,8 @@ def run_server(settings):
         knock=settings['knock'],
         mime_type=settings['mime_type'],
         allow_post_backs=settings['receive_postbacks'],
-        log_post_backs=settings['log_post_backs']
+        log_post_backs=settings['log_post_backs'],
+        log_file=settings['log_file']
     )
 
     unwrapped_script = 'time '+get_curlbomb_command(settings, unwrapped=True)
@@ -411,10 +417,17 @@ def run_server(settings):
             httpd.ssh_conn.kill()
         settings['resource'].close()
 
+class ArgumentIsFileException(Exception):
+    def __init__(self, path):
+        self.path = path
+        self.message = 'invalid choice: {}'.format(self.path)
+        Exception.__init__(self)
+                
 def argparser(formatter_class=argparse.HelpFormatter):
     parser = argparse.ArgumentParser(
         description='curlbomb is an HTTP server for serving one-time-use shell scripts',
         formatter_class=formatter_class)
+    subparsers = parser.add_subparsers()
     parser.add_argument('-k', '--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
     parser.add_argument('-n', '--num-gets', metavar="N",
@@ -423,10 +436,6 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('-p', '--port',  help="TCP port number to use "
                         "(default:random available)",
                         default="random")
-    parser.add_argument('-c', '--command', metavar="CMD",
-                        help="The the shell command to curlbomb into "
-                        "(default is to detect #!interpreter ie. the shebang)",
-                        default="AUTO")
     parser.add_argument('-d','--domain', metavar="host[:port]",
                         help="Provide the domain and port to display "
                         "in the constructed URL. (example.com:8080)")
@@ -448,29 +457,96 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         "(optionally PGP encrypted)")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run "
                         "(just get the script, don't run it)", action="store_true")
-    parser.add_argument('--unwrapped', help="Get the unwrapped version of the curlbomb (1 less server request, but longer command)", action="store_true")
-    parser.add_argument('--disable-postback', help="Do not post client output back to the server", action="store_true")
+    parser.add_argument('--unwrapped',
+                        help="Get the unwrapped version of the curlbomb "
+                        "(1 less server request, but longer command)", action="store_true")
+    parser.add_argument('--disable-postback',
+                        help="Do not post client output back to the server",
+                        action="store_true")
     parser.add_argument('--client-logging', dest="client_logging",
                         help="Enable client execution log (curlbomb.log on client)",
                         action="store_true")
     parser.add_argument('--mime-type', help="The content type to serve",
                         default="text/plain")
     parser.add_argument('--version', action="version", version=get_version())
-    parser.add_argument('resource', metavar="FILE", nargs='?', default=sys.stdin,
-                        help="File to serve (or don't specify for stdin)")
+
+    run_parser = subparsers.add_parser('run', help="Run a local script on the client")
+    run_parser.add_argument('-c', '--command', metavar="CMD",
+                            help="The the shell command to curlbomb into "
+                            "(default is to detect #!interpreter ie. the shebang)",
+                            default=None)
+    run_parser.add_argument('resource', metavar="SCRIPT", default=sys.stdin)
+    run_parser.set_defaults(prepare_command=prepare_run_command)
+    
+    put_parser = subparsers.add_parser(
+        'put', help='Copy local files or directories to the client')
+    put_parser.add_argument('source', metavar="SOURCE", nargs=1,
+                            help="Local path to copy (or put glob in quotes)")
+    put_parser.add_argument('dest', metavar="DEST", nargs='?',
+                            help="Remote directory to copy to")
+    put_parser.set_defaults(prepare_command=prepare_put_command)
+
+    get_parser = subparsers.add_parser(
+        'get', help='Copy remote files or directories to the server')
+    get_parser.add_argument('source', metavar="SOURCE", nargs=1,
+                            help="Remote path to copy (or put glob in quotes)")
+    get_parser.add_argument('dest', metavar="DEST", nargs='?',
+                            help="Local directory to copy to")
+    get_parser.set_defaults(prepare_command=prepare_get_command)
+    
     return parser
-                
-def parse_args(args=None):
+
+def prepare_run_command(args, settings):
+    settings['shell_command'] = args.command
+
+    if args.resource == sys.stdin and sys.stdin.isatty():
+        argparser().print_help()
+        sys.stderr.write("\nYou must specify a file or pipe one to this command's stdin\n")
+        sys.exit(1)
+    if args.resource == sys.stdin or args.resource == '-':
+        settings['resource'] = BytesIO(sys.stdin.buffer.read())
+    else:
+        settings['resource'] = open(args.resource, 'br')
+
+    #Detect if the input has a shebang so we can detect the shell command to display    
+    if args.command is None:
+        line = settings['resource'].readline(500)
+        settings['resource'].seek(0)
+        if line.startswith(b'#!'):
+            settings['shell_command'] = line[2:].decode("utf-8").rstrip()
+        else:
+            settings['shell_command'] = "bash"
+        
+def prepare_put_command(args, settings):
+    settings['client_quiet'] = True
+    paths = " ".join([shlex.quote(x) for x in glob.glob(args.source[0])])
+    cmd = shlex.split('tar cjh {}'.format(paths))
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    settings['resource'] = p.stdout
+    settings['shell_command'] = 'tar xjvf'
+
+def prepare_get_command(args, settings):
+    settings['client_quiet'] = True
+    if args.dest is None:
+        args.dest = os.curdir
+    cmd = shlex.split('tar xzv')
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    settings['log_file'] = p.stdin
+    args.resource = settings['resource'] = BytesIO(
+        bytes("tar czh {}".format(args.source[0]), "utf-8"))
+    
+def get_settings(args=None):
     """Parse args and set other settings based on them
     
     Return a new dictionary containing all args and settings
     """
-    parser = argparser()    
+    # Parse the arguments:
+    parser = argparser()
     args = parser.parse_args(args)
-
+        
     settings = {
         'receive_postbacks': True,
-        'shell_command': args.command,
+        'shell_command': 'bash',
         'http_fetcher': 'curl -LSs',
         'mime_type': args.mime_type,
         'require_hostname_header': True,
@@ -484,6 +560,8 @@ def parse_args(args=None):
         'ssh': args.ssh,
         'quiet': args.quiet and not args.verbose,
         'client_logging': args.client_logging,
+        'client_quiet': False,
+        'log_file': None,
         'require_knock_from_environment': True,
         'wget': args.wget,
         'unwrapped': args.unwrapped
@@ -494,15 +572,6 @@ def parse_args(args=None):
         settings['log_post_backs'] = True
         logging.getLogger('tornado.access').setLevel(level=logging.INFO)
         
-    if args.resource == sys.stdin and sys.stdin.isatty():
-        parser.print_help()
-        sys.stderr.write("\nYou must specify a file or pipe one to this command's stdin\n")
-        sys.exit(1)
-    if args.resource == sys.stdin or args.resource == '-':
-        settings['resource'] = BytesIO(sys.stdin.buffer.read())
-    else:
-        settings['resource'] = open(args.resource, 'br')
-
     if settings['require_knock']:
         settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
                                              altchars=b'_.').decode("utf-8")
@@ -522,15 +591,6 @@ def parse_args(args=None):
         # command. This will output this unrwapped version instead.
         settings['require_knock_from_environment'] = False
         
-    #Detect if the input has a shebang so we can detect the shell command to display
-    if args.command == "AUTO":
-        line = settings['resource'].readline(500)
-        settings['resource'].seek(0)
-        if line.startswith(b'#!'):
-            settings['shell_command'] = line[2:].decode("utf-8").rstrip()
-        else:
-            settings['shell_command'] = "bash"
-
     if args.wget:
         settings['http_fetcher'] = "wget -q -O -"
         if args.log_post_backs:
@@ -576,10 +636,19 @@ def parse_args(args=None):
         if len(parts) > 1:
             settings['display_port'] = parts[1]
 
+    try:
+        prepare_cmd = args.prepare_command
+    except AttributeError:
+        # No sub-command specified, default to run command with stdin
+        args.command = None
+        args.resource = sys.stdin
+        prepare_cmd = prepare_run_command
+    prepare_cmd(args, settings)
+
     return settings
 
 def main():
-    settings = parse_args()
+    settings = get_settings()
     run_server(settings)
     
 if __name__ == "__main__":

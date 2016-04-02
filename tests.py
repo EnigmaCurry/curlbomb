@@ -27,7 +27,7 @@ def get_curlbomb(args, script):
             args = shlex.split(args)
         else:
             args.append(s.name)    
-        settings = curlbomb.parse_args(args)
+        settings = curlbomb.get_settings(args)
         client_cmd = curlbomb.get_curlbomb_command(settings)
         curlbomb_thread = threading.Thread(target=curlbomb.run_server, args=(settings,))
         log.info("starting curlbomb: {}".format(args))
