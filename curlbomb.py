@@ -259,26 +259,27 @@ def get_curlbomb_command(settings, unwrapped=None):
                 hostname_header = ' -H "X-hostname: $(hostname)"'
 
         logger = ""
-        if settings['client_logging'] or settings['receive_postbacks']:
-            if not settings['client_quiet']:
-                logger = " | tee "
-                if settings['client_logging']:
-                    logger += "curlbomb.log"
+        if settings['client_logging']:
+            logger = " | tee curlbomb.log"
 
-            if settings['receive_postbacks']:
-                callback_cmd=" | curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header}"
-                if settings['wget']:
-                    callback_cmd = (
-                        ' && wget -q -O - --post-data="wget post-back finished. '
-                        'wget can\'t stream the client output like curl can though '
-                        ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
-                logger += callback_cmd.format(
-                        ssl="s" if settings['ssl'] is not None else "",
-                        host=settings['display_host'],
-                        port=settings['display_port'],
-                        knock=knock,
-                        hostname_header=hostname_header
-                    )
+        if settings['receive_postbacks']:
+            callback_cmd="curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header}"
+            if settings['client_quiet']:
+                callback_cmd = " | " + callback_cmd
+            else:
+                callback_cmd = " | tee >({cmd})".format(cmd=callback_cmd)
+            if settings['wget']:
+                callback_cmd = (
+                    ' && wget -q -O - --post-data="wget post-back finished. '
+                    'wget can\'t stream the client output like curl can though '
+                    ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
+            logger += callback_cmd.format(
+                    ssl="s" if settings['ssl'] is not None else "",
+                    host=settings['display_host'],
+                    port=settings['display_port'],
+                    knock=knock,
+                    hostname_header=hostname_header
+                )
 
         if settings['shell_command'] is None or settings['survey']:
             cmd = "{http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
@@ -340,7 +341,9 @@ def run_server(settings):
         log_file=settings['log_file']
     )
 
-    unwrapped_script = 'time '+get_curlbomb_command(settings, unwrapped=True)
+    unwrapped_script = get_curlbomb_command(settings, unwrapped=True)
+    if not settings['client_quiet']:
+        unwrapped_script = "time "+unwrapped_script
 
     app = tornado.web.Application(
         [
@@ -475,7 +478,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
                             help="The the shell command to curlbomb into "
                             "(default is to detect #!interpreter ie. the shebang)",
                             default=None)
-    run_parser.add_argument('resource', metavar="SCRIPT", default=sys.stdin)
+    run_parser.add_argument('resource', metavar="SCRIPT", nargs='?', default=sys.stdin)
     run_parser.set_defaults(prepare_command=prepare_run_command)
     
     put_parser = subparsers.add_parser(
@@ -499,12 +502,15 @@ def argparser(formatter_class=argparse.HelpFormatter):
 def prepare_run_command(args, settings):
     settings['shell_command'] = args.command
 
-    if args.resource == sys.stdin and sys.stdin.isatty():
+    if args.resource == sys.stdin:
+        args.resource = settings['stdin']
+    
+    if args.resource == settings['stdin'] and settings['stdin'].isatty():
         argparser().print_help()
         sys.stderr.write("\nYou must specify a file or pipe one to this command's stdin\n")
         sys.exit(1)
-    if args.resource == sys.stdin or args.resource == '-':
-        settings['resource'] = BytesIO(sys.stdin.buffer.read())
+    if args.resource == settings['stdin'] or args.resource == '-':
+        settings['resource'] = BytesIO(settings['stdin'].buffer.read())
     else:
         settings['resource'] = open(args.resource, 'br')
 
@@ -522,7 +528,7 @@ def prepare_put_command(args, settings):
     paths = " ".join([shlex.quote(x) for x in glob.glob(args.source[0])])
     cmd = shlex.split('tar cjh {}'.format(paths))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    settings['resource'] = p.stdout
+    args.resource = settings['resource'] = p.stdout
     settings['shell_command'] = 'tar xjvf'
 
 def prepare_get_command(args, settings):
@@ -535,8 +541,10 @@ def prepare_get_command(args, settings):
     args.resource = settings['resource'] = BytesIO(
         bytes("tar czh {}".format(args.source[0]), "utf-8"))
     
-def get_settings(args=None):
+def get_settings(args=None, override_defaults={}):
     """Parse args and set other settings based on them
+
+    Default settings can be overriden by passing in a dictionary
     
     Return a new dictionary containing all args and settings
     """
@@ -564,8 +572,10 @@ def get_settings(args=None):
         'log_file': None,
         'require_knock_from_environment': True,
         'wget': args.wget,
-        'unwrapped': args.unwrapped
+        'unwrapped': args.unwrapped,
+        'stdin': sys.stdin
     }
+    settings.update(override_defaults)
     
     if args.verbose:
         log.setLevel(level=logging.INFO)
@@ -641,7 +651,7 @@ def get_settings(args=None):
     except AttributeError:
         # No sub-command specified, default to run command with stdin
         args.command = None
-        args.resource = sys.stdin
+        args.resource = settings['stdin']
         prepare_cmd = prepare_run_command
     prepare_cmd(args, settings)
 

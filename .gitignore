@@ -11,3 +11,4 @@ curlbomb-*.tar.xz
 *.egg-info
 pkg/
 src/
+curlbomb.1

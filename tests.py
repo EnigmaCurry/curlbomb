@@ -6,7 +6,7 @@ import shlex
 import time
 import curlbomb
 import sys
-from io import BytesIO
+from io import TextIOWrapper, BytesIO
 from tempfile import NamedTemporaryFile
 import logging
 import socket
@@ -14,26 +14,38 @@ import socket
 log = logging.getLogger("curlbomb.test")
 log.setLevel(level=logging.INFO)
 
-def get_curlbomb(args, script):
+def get_curlbomb(args, script=None):
     """Prepare curlbomb to run in a thread
+
+    Assumes args has a '{script}' formatter in it to replace a temporary path with
+    If no '{script}' formatter is found, stdin is mocked through settings['stdin']
 
     Returns tuple(curlbomb_thread, client_command)
     """
-    with NamedTemporaryFile() as s:
-        s.write(bytes(script, "utf-8"))
-        s.flush()
-        if type(args) == str:
-            args += " {file}".format(file=s.name)
-            args = shlex.split(args)
+    if type(script) == str:
+        script = bytes(script, "utf-8")
+    stdin = "{script}" not in args
+    try:
+        override_defaults = {}
+        log.info("Using stdin: {}".format(stdin))
+        if stdin:
+            s = TextIOWrapper(BytesIO(script))
+            override_defaults['stdin'] = s
         else:
-            args.append(s.name)    
-        settings = curlbomb.get_settings(args)
+            s = NamedTemporaryFile()
+            s.write(script)
+            s.flush()
+            args = args.format(script=s.name)
+        args = shlex.split(args)
+        log.info("starting curlbomb: {}".format(args))
+        settings = curlbomb.get_settings(args, override_defaults)
         client_cmd = curlbomb.get_curlbomb_command(settings)
         curlbomb_thread = threading.Thread(target=curlbomb.run_server, args=(settings,))
-        log.info("starting curlbomb: {}".format(args))
         curlbomb_thread.start()
         return (curlbomb_thread,
                 client_cmd)
+    finally:
+        s.close()
 
 def run_client(client_cmd, expected_out, expected_err=None):
     # Have to run explicitly in bash to get subprocesses to work:
@@ -64,7 +76,7 @@ def simple_runner(args, script, expected_out):
     client_out, client_err = run_client(client_cmd, expected_out)
 
 def test_default_args():
-    simple_runner('', *client_scripts['short'])
+    simple_runner('-v', *client_scripts['short'])
 
 def test_multi_gets():
     script, expected_out = client_scripts['short']
@@ -86,7 +98,7 @@ def test_python():
     simple_runner('', *client_scripts['python'])
 
 def test_alternate_command():
-    simple_runner('-c python', *client_scripts['python_no_shebang'])
+    simple_runner('-v run -c python', *client_scripts['python_no_shebang'])
 
 def test_wget():
     simple_runner('-w', *client_scripts['short'])
@@ -99,6 +111,6 @@ def test_survey_wget():
 
 def test_unwrapped_command():
     script, expected_out = client_scripts['short']
-    cb, client_cmd = get_curlbomb('--unwrapped -c source', script)
+    cb, client_cmd = get_curlbomb('--unwrapped run -c source', script)
     assert client_cmd.startswith('source ')
     client_out, client_err = run_client(client_cmd, expected_out)
