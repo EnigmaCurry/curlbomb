@@ -91,11 +91,9 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
         if self._knock is not None:
             x_knock = self.request.headers.get('X-knock', None)
             if x_knock != self._knock:
-                self.set_status(401)
-                self.write(b"Invalid knock\r\n")
-                self.finish()
                 log.info("Invalid knock")
-            
+                raise tornado.web.HTTPError(401, 'Invalid knock')
+    
     def shutdown_if_ready(self):
         """Shutdown if it's time to shutdown"""
         # If the resource has been retrieved all the times it's allowed:
@@ -109,6 +107,13 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
                 # Shutdown:
                 log.info("Served resource {} times. Done.".format(self._state['num_gets']))
                 tornado.ioloop.IOLoop.current().stop()
+
+    def write_error(self, status_code, **kwargs):
+        try:
+            log_message = kwargs.get('exc_info')[1].log_message
+        except (TypeError, AttributeError, IndexError):
+            log_message = 'unknown reason'
+        self.finish(log_message+'\r\n')
 
 class CurlbombResourceWrapperRequestHandler(tornado.web.RequestHandler):
     """Serve a script that wraps another curlbomb"""
@@ -132,10 +137,9 @@ class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
             self._state['num_gets'] += 1
         else:
             # Client is not allowed to get any more:
-            self.set_status(405)
-            self.write(b"Client is not allowed to GET anymore\r\n")
             log.info("Resource denied (max gets reached) to: {}".format(
                 self.request.remote_ip))
+            raise tornado.web.HTTPError(405, 'Client is not allowed to GET anymore')
         self.finish()
         if self._state['num_gets'] < self._allowed_gets:
             self._resource.seek(0)
@@ -163,22 +167,17 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
         
     def prepare(self):
         CurlbombBaseRequestHandler.prepare(self)
+        log.info("Stream prepare")
         if not self._allow_post_backs:
-            self.set_status(405)
-            self.write(b"This server is not configured to allow data upload\r\n")
-            self.finish()
-            return
+            raise tornado.web.HTTPError(405, 'This server is not configured to allow data upload')
         if (self._state['num_posts'] +
             self._state['num_posts_in_progress']) >= self._allowed_gets:
-            self.set_status(403)
-            self.write(b"Maximum number of posts reached\r\n")
-            self.finish()
+            raise tornado.web.HTTPError(403, 'Maximum number of posts reached')
         self._state['num_posts_in_progress'] += 1
                 
 class ErrorRequestHandler(tornado.web.RequestHandler):
     def get(self):
-        self.set_status(404)
-        self.write(b"404 Not Found\n")
+        raise tornado.web.HTTPError(404, 'Not Found')
         
 class SSHRemoteForward(threading.Thread):
     def __init__(self, host, remote_forward, ssh_port=22):
