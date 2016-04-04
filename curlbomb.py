@@ -473,7 +473,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('--version', action="version", version=get_version())
 
     run_parser = subparsers.add_parser('run', help="Run a local script on the client")
-    run_parser.add_argument('-c', '--command', metavar="CMD",
+    run_parser.add_argument('-c', '--command', metavar="COMMAND",
                             help="The the shell command to curlbomb into "
                             "(default is to detect #!interpreter ie. the shebang)",
                             default=None)

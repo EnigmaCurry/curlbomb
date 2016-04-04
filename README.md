@@ -34,7 +34,7 @@ Or from the [Python Package Index](https://pypi.python.org/pypi/curlbomb) (PyPI)
 
 Serve a script stored in a file:
 
-    curlbomb /path/to/script
+    curlbomb run /path/to/script
 	
 This outputs a curl command to run the script on another computer:
 
@@ -46,7 +46,7 @@ the HTTP headers. This is for two reasons:
  * It adds a factor of authentication. Requests without the knock are
    denied.
  * It helps to prevent mistakes, as the knock parameter is randomly
-   generated each time curlbomb is run and can only be used once. (-n 1)
+   generated each time curlbomb is run and can only be used once. (`-n 1`)
 
 (Astute readers will notice that the KNOCK variable is being fed to
 the script that is being downloaded, not into the curl command. That's
@@ -54,7 +54,7 @@ because it's really a curlbomb within a curlbomb. The first curl
 command downloads a script that includes a second curl command that
 *does* require the KNOCK parameter. This nesting allows us to keep the
 client command as short as possible and hide some extra
-boilerplate. See --unwrapped.)
+boilerplate. See `--unwrapped`.)
 
 If you want the curl, without the bomb, ie. you just want to grab the
 script without redirecting it to bash, use --survey. This is useful
@@ -73,7 +73,7 @@ Or from shell scripts:
 
 Or type it interactively:
 
-    $ curlbomb -
+    $ curlbomb run -
 	pkg instll sqlite3
 	echo "bad idea, I don't have spollcheck when I typ in the terminal"
 
@@ -86,15 +86,28 @@ interpreter the client runs:
 	print("Hello, from Python!")
 	EOF
 
-Note that the resource curlbomb sends doesn't need to be a
-script. Here's a useful command to send a tarball of your private SSH
-keys to another client you're setting up:
+curlbomb can also transfer files and directories with put and get commands:
 
-    tar cjh -C $HOME .ssh | curlbomb -c "tar xjv -f"
+    # Recursively copy a local directory to a client:
+	curlbomb put ~/.ssh
+	
+	# Recursively copy remote directory to the server:
+	curlbomb get /var/log
+
+The put and get commands are just convenience wrappers for running tar
+on both ends of the curlbomb pipe. You can achieve the same thing with
+this:
+
+    # Recursively copy a local directory to a client:
+	tar cjh -C $SOURCE_DIR/.. $SOURCE_DIR | curlbomb run -c "tar xjv -f"
+	
+	# Recursively copy a remote directory to the server:
+	echo "tar cjh $1" | curlbomb -l | tar xjv -C $DEST_DIR
 
 The -c parameter tells the client what command to run the resource
 with. By specifying "tar xj -f" you are telling it to read the
 resource directly as a tarball and extract it.
+
 
 By default, curlbomb constructs URLs with the IP address of the local
 machine. This usually means that clients on another network will be
@@ -126,8 +139,8 @@ For extra security, you can enable TLS with --ssl:
 The example above is passing a bit of secure information; a
 password. Even without TLS, curlbomb secures access with a knock
 parameter. For many use-cases, this is sufficient to secure it, as
-curlbombs are short lived and can only be retrieved one time (-n
-1). However, the connection itself might be spied on through traffic
+curlbombs are short lived and can only be retrieved one time (`-n
+1`). However, the connection itself might be spied on through traffic
 analysis at your ISP or any other router your connection flows
 through. Using TLS makes sure this doesn't happen. 
 
@@ -148,12 +161,23 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 
 ## Command Line Args
 
-    usage: curlbomb.py [-h] [-k] [-n N] [-p PORT] [-c CMD] [-d DOMAIN] [-w] [-l]
-                       [-q] [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE]
-                       [--survey] [--unwrapped] [--disable-postback]
-                       [--client-logging] [--mime-type MIME_TYPE] [--version]
-                       [FILE]
-    
+    usage: curlbomb [-h] [-k] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q]
+                   [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
+                   [--unwrapped] [--disable-postback] [--client-logging]
+                   [--mime-type MIME_TYPE] [--version]
+                   {run,put,get} ...
+				   
+curlbomb has a few subcommands:
+
+ * run - run a shell script
+ * put - copy local files/directories to remote system
+ * get - copy remote files/directories to local system
+ 
+If no command is specified, and there is data being piped to stdin,
+then the run command is used implicitly.
+
+### The following arguments apply to all subcommands:
+
 `-k, --disable-knock` Don't require a X-knock HTTP header from the
 client. Normally curlbombs are one-time-use and meant to be
 copy-pasted from terminal to terminal. If you're embedding into a
@@ -168,15 +192,6 @@ default. Setting this to 0 will allow the resource to be downloaded an
 unlimited number of times.
 
 `-p PORT` The local TCP port number to use.
-
-`-c COMMAND` Set the name of the command that the curlbomb is run with
-on the client. By default, this is autodected from the first line of
-the script, called the shebang (#!). If none can be detected, and one
-is not provided by this setting, the fallback of "bash" is used. Note
-that curlbomb will still wrap your script inside of bash, even with -c
-specified, so the client command will still show it as running in
-bash. The command you specified is put into the wrapped script. See
---unwrapped to change this behaviour.
 
 `-d host[:port], --domain host[:port]` Specify the domain name and
 port that is displayed in the URL of the client command. This does not
@@ -238,6 +253,41 @@ file called curlbomb.log
 
 `--version` Print the curlbomb version
 
-`FILE` The script or other resource to serve via curlbomb. You can
+### Run subcommand
+
+`curlbomb run [-c COMMAND] [SCRIPT]`
+
+`-c COMMAND` Set the name of the command that the curlbomb is run with
+on the client. By default, this is autodected from the first line of
+the script, called the shebang (#!). If none can be detected, and one
+is not provided by this setting, the fallback of "bash" is used. Note
+that curlbomb will still wrap your script inside of bash, even with `-c`
+specified, so the client command will still show it as running in
+bash. The command you specified is put into the wrapped script. See
+`--unwrapped` to change this behaviour.
+
+`SCRIPT` The script or other resource to serve via curlbomb. You can
 also leave this blank (or specify '-') and the resource will be read
 from stdin.
+
+Note that the run subcommand is implied if you are pipeing data to
+curlbomb. For instnace, this command is assumed that the run command
+is desired even if not explicitly used:
+
+    echo "./run_server.sh" | curlbomb
+
+Which is equivalent to:
+
+    echo "./run_server.sh" | curlbomb run -
+
+### Put subcommand
+
+`curlbomb put SOURCE [DEST]`
+
+Copies file(s) from the local SOURCE path to the remote DEST path. If a directory is specified, all child paths will be copied recursively.
+
+### Get subcommand
+
+`curlbomb get SOURCE [DEST]`
+
+Copies file(s) from the remote SOURCE path to the local DEST path. If a directory is specified, all child paths will be copied recursively.
