@@ -257,6 +257,8 @@ file called curlbomb.log
 
 `curlbomb run [-c COMMAND] [SCRIPT]`
 
+Runs a shell script on the remote client.
+
 `-c COMMAND` Set the name of the command that the curlbomb is run with
 on the client. By default, this is autodected from the first line of
 the script, called the shebang (#!). If none can be detected, and one
