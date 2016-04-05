@@ -9,24 +9,28 @@ you to install their software in one line, like this?
 
 I call that a curl bomb... I don't know if anyone else does.
 
-curlbomb reads a file, or from stdin, and then serves it one time to
-the first client to retrieve it. A command is printed out that will
-construct the curl bomb the client needs to run, which includes a
-one-time-use passphrase (called a knock) required to download the
-resource. This command is copied and run in another shell, on some
+curlbomb serves a file (read from disk or stdin) to the first client
+to request it, then shuts down. A command is printed out that will
+construct the curl bomb the client needs to run, which includes the
+one-time-use passphrase (called a knock) that is required to download
+the resource. This command is copied and run in another shell, on some
 other computer, to download and run the script in one line.
 
-curlbomb has optional integration with OpenSSH to make it easy to
+curlbomb has optional integration with OpenSSL to secure
+communications. OpenSSH is supported as well, to make it easy to
 curlbomb from anywhere on the internet, to anywhere else, through a
 proxy server that you can forward the port through.
 
 ## Install
 
-This script can be installed from the [Arch User Repository](https://aur.archlinux.org/packages/curlbomb/) (AUR):
+This script can be installed from the
+[Arch User Repository](https://aur.archlinux.org/packages/curlbomb/)
+(AUR):
 
     pacaur -S curlbomb
 	
-Or from the [Python Package Index](https://pypi.python.org/pypi/curlbomb) (PyPI):
+Or from the
+[Python Package Index](https://pypi.python.org/pypi/curlbomb) (PyPI):
 
     pip install curlbomb
 
@@ -36,9 +40,12 @@ Serve a script stored in a file:
 
     curlbomb run /path/to/script
 	
-This outputs a curl command to run the script on another computer:
+This outputs a curl command that you copy and paste into a shell on another
+computer:
 
     KNOCK='nDnXXp8jkZKtbush' bash <(curl -LSs http://192.0.2.100:48690)
+	
+Once pasted, the script is automatically downloaded and executed.
 
 By default, the client must pass a KNOCK variable that is passed in
 the HTTP headers. This is for two reasons:
@@ -46,7 +53,8 @@ the HTTP headers. This is for two reasons:
  * It adds a factor of authentication. Requests without the knock are
    denied.
  * It helps to prevent mistakes, as the knock parameter is randomly
-   generated each time curlbomb is run and can only be used once. (`-n 1`)
+   generated each time curlbomb is run and can only be used once. (See
+   `-n 1`)
 
 (Astute readers will notice that the KNOCK variable is being fed to
 the script that is being downloaded, not into the curl command. That's
@@ -56,15 +64,18 @@ command downloads a script that includes a second curl command that
 client command as short as possible and hide some extra
 boilerplate. See `--unwrapped`.)
 
-If you want the curl, without the bomb, ie. you just want to grab the
-script without redirecting it to bash, use --survey. This is useful
-for testing the retrieval of scripts without running them.
+If you want just the curl, without the bomb, ie. you just want to grab
+the script without redirecting it to bash, use `--survey`. This is
+useful for testing the retrieval of scripts without running them.
 
-You can also pipe scripts directly into curlbomb:
+You can pipe scripts directly into curlbomb:
 
     echo "pacman --noconfirm -S openssh && systemctl start sshd" | curlbomb
 	
-Or from shell scripts:
+Whenever you pipe data to curlbomb you can omit the `run` subcommand,
+it's assumed that you want to run it from stdin.
+	
+This works in shell scripts too:
 
     cat <<EOF | curlbomb
     #!/bin/bash
@@ -77,8 +88,12 @@ Or type it interactively:
 	pkg instll sqlite3
 	echo "bad idea, I don't have spollcheck when I typ in the terminal"
 
+(The single dash says to read from stdin, even when nothing is being
+piped.)
+
 The shebang line (#!) is interpreted and automatically changes the
-interpreter the client runs:
+interpreter the client runs, the following example runs the script
+with python instead of the default bash:
 
     cat <<EOF | curlbomb
 	#!/usr/bin/env python3
@@ -86,51 +101,56 @@ interpreter the client runs:
 	print("Hello, from Python!")
 	EOF
 
-curlbomb can also transfer files and directories with put and get commands:
+curlbomb can also transfer files and directories with `put` and `get`
+commands:
 
     # Recursively copy a local directory to a client:
-	curlbomb put ~/.ssh
+	curlbomb put ~/.ssh 
 	
 	# Recursively copy remote directory to the server:
-	curlbomb get /var/log
+	curlbomb get /var/log 
 
-The put and get commands are just convenience wrappers for running tar
-on both ends of the curlbomb pipe. You can achieve the same thing with
-this:
+The `put` and `get` subcommands are just convenience wrappers for
+running tar on both ends of the curlbomb pipe. You could achieve the
+same thing manually:
 
-    # Recursively copy a local directory to a client:
-	tar cjh -C $SOURCE_DIR/.. $SOURCE_DIR | curlbomb run -c "tar xjv -f"
+    # Copy a local directory to a client, the hard way:
+	tar cjh -C $HOME .ssh | curlbomb run -c "tar xjv -f"
 	
-	# Recursively copy a remote directory to the server:
-	echo "tar cjh $1" | curlbomb -l | tar xjv -C $DEST_DIR
+	# Copy a remote directory to the server, the hard way:
+	echo "tar cjh -C /var log" | curlbomb -l --client-quiet | tar xjv
 
-The -c parameter tells the client what command to run the resource
-with. By specifying "tar xj -f" you are telling it to read the
-resource directly as a tarball and extract it.
+The first example has a `run -c` parameter that tells the client that
+we want to interpret the data as being a tar archive rather than a
+script. The second example has a `-l` parameter that will output the
+data received to stdout, in this case piped directly into tar.
 
+### SSH tunnel
 
 By default, curlbomb constructs URLs with the IP address of the local
 machine. This usually means that clients on another network will be
 unable to retrieve anything from curlbomb, unless you have a port
-opened up through your firewall. As an alternative, curlbomb can be
-tunneled through SSH to another host that has the proper port
-open. For instance:
+opened up through your firewall (and appropriate use of the `--domain`
+argument.) As an alternative, curlbomb can be tunneled through SSH to
+another host that has the proper port open. For instance:
 
     echo "apt-get install salt-minion" | curlbomb --ssh user@example.com:8080
 	
 The above command connects to example.com over SSH (port 22 by
-default) and forwards the local curlbomb HTTP port to
-example.com:8080. The URL that curlbomb prints out uses the domain
-name of the ssh server instead of the local IP address. The SSH tunnel
-is left open for as long as curlbomb remains running. Any user on
-example.com will be able to fetch the resource from
-localhost:8080. However, by default, SSH does not open this up to the
-rest of the world. If you want any client to be able to connect to
-example.com:8080 you will need to modify the sshd_config of the server
-to allow GatewayPorts:
+default) and forwards the curlbomb server port to
+example.com:8080. The URL that curlbomb prints out will now use the
+domain name of the ssh server, instead of the local IP address. The
+SSH tunnel is left open for as long as the curlbomb server remains
+running. Any user directly on the example.com host will be able to
+fetch the resource from localhost:8080. However, by default, SSH does
+not open this up to the rest of the world. If you want any client to
+be able to connect to example.com:8080 you will need to modify the
+sshd_config of the server to allow GatewayPorts:
 
 	# Put this in your /etc/ssh/sshd_config and restart your ssh service:
     GatewayPorts clientspecified
+
+### TLS / SSL security
 
 For extra security, you can enable TLS with --ssl:
 
@@ -151,6 +171,8 @@ certificate in plain text on your local machine, the file may be
 optionally PGP encrypted (ascii-armored) and curlbomb will decrypt it
 only when necessary.
 
+### Aliases
+
 By now the curlbomb command might be getting quite long. Once you've
 encrypted and stored your SSL certificate, and setup your SSH server,
 create an alias for ease of use, for example:
@@ -162,19 +184,19 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 ## Command Line Args
 
     usage: curlbomb [-h] [-k] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q]
-                   [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
-                   [--unwrapped] [--disable-postback] [--client-logging]
-                   [--mime-type MIME_TYPE] [--version]
-                   {run,put,get} ...
+                    [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
+                    [--unwrapped] [--disable-postback] [--client-logging]
+                    [--client-quiet] [--mime-type MIME_TYPE] [--version]
+                    {run,put,get} ...
 				   
 curlbomb has a few subcommands:
 
- * run - run a shell script
- * put - copy local files/directories to remote system
- * get - copy remote files/directories to local system
+ * `run` - run a shell script
+ * `put` - copy local files/directories to remote system
+ * `get` - copy remote files/directories to local system
  
-If no command is specified, and there is data being piped to stdin,
-then the run command is used implicitly.
+If no subcommand is specified, and there is data being piped to stdin,
+then the `run` subcommand is used implicitly.
 
 ### The following arguments apply to all subcommands:
 
@@ -247,6 +269,8 @@ server. Note that --log-posts will have no effect with this enabled.
 
 `--client-logging` Logs all client output locally on the client to a
 file called curlbomb.log
+
+`--client-quiet` Quiets the output on the client
 
 `--mime-type MIME_TYPE` The mime-type header to send, by default
 "text/plain"

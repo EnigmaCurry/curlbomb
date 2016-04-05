@@ -473,6 +473,9 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('--client-logging', dest="client_logging",
                         help="Enable client execution log (curlbomb.log on client)",
                         action="store_true")
+    parser.add_argument('--client-quiet', dest="client_quiet",
+                        help="Quiet the output on the client",
+                        action="store_true")
     parser.add_argument('--mime-type', help="The content type to serve",
                         default="text/plain")
     parser.add_argument('--version', action="version", version=get_version())
@@ -595,7 +598,7 @@ def get_settings(args=None, override_defaults={}):
         # Log stdout on client:
         'client_logging': args.client_logging,
         # Client quiet flag
-        'client_quiet': False,
+        'client_quiet': args.client_quiet,
         # Popen object processing log_post_backs
         'log_process': None,
         # File to receive log_post_backs:
