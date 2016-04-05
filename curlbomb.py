@@ -154,6 +154,7 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
             sys.stdout.buffer.write(data)
         if self._log_file:
             self._log_file.write(data)
+            self._log_file.flush()
 
     def put(self):
         """Finish streamed PUT request"""
@@ -418,6 +419,8 @@ def run_server(settings):
         if httpd.ssh_conn is not None:
             httpd.ssh_conn.kill()
         settings['resource'].close()
+        if settings['log_file']:
+            settings['log_file'].close()
 
 class ArgumentIsFileException(Exception):
     def __init__(self, path):
@@ -526,13 +529,13 @@ def prepare_run_command(args, settings):
 def prepare_put_command(args, settings):
     path = glob.glob(args.source[0])[0]
     parent_path, path = os.path.split(os.path.abspath(path))
-    cmd = shlex.split('tar cjh -C {parent_path} {path}'.format(parent_path=shlex.quote(parent_path), path=shlex.quote(path)))
+    cmd = shlex.split('tar czh -C {parent_path} {path}'.format(parent_path=shlex.quote(parent_path), path=shlex.quote(path)))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     args.resource = settings['resource'] = p.stdout
     if args.dest:
-        settings['shell_command'] = 'cd {dest} && tar xjvf'.format(dest=shlex.quote(args.dest))
+        settings['shell_command'] = 'cd {dest} && tar xzvf'.format(dest=shlex.quote(args.dest))
     else:
-        settings['shell_command'] = 'tar xjvf'
+        settings['shell_command'] = 'tar xzvf'
 
 def prepare_get_command(args, settings):
     settings['client_quiet'] = True
@@ -540,8 +543,7 @@ def prepare_get_command(args, settings):
         dest = os.curdir
     else:
         dest = shlex.quote(args.dest)
-    cmd = shlex.split('tar xzv -C {dest}'.format(dest=dest))
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    p = subprocess.Popen(['tar','xzv','-C',dest], stdin=subprocess.PIPE)
     settings['log_file'] = p.stdin
     parent_path, path = os.path.split(os.path.abspath(args.source[0]))
     args.resource = settings['resource'] = BytesIO(

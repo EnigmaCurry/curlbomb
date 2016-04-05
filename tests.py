@@ -12,6 +12,9 @@ import logging
 import socket
 import unittest
 import tornado
+import tempfile
+import hashlib
+import shutil
 
 log = logging.getLogger("curlbomb.test")
 log.setLevel(level=logging.INFO)
@@ -37,8 +40,6 @@ class CurlbombThread(threading.Thread):
         finally:
             log.info('Server finished')
 
-curlbomb_thread = None
-        
 class CurlbombTestBase(unittest.TestCase):
 
     def get_curlbomb(self, args, script=None):
@@ -49,11 +50,9 @@ class CurlbombTestBase(unittest.TestCase):
 
         Returns tuple(curlbomb_thread, client_command)
         """
-        global curlbomb_thread
-        self.assertEquals(curlbomb_thread, None, "curlbomb thread was not cleaned up from last run")
         if type(script) == str:
             script = bytes(script, "utf-8")
-        stdin = "{script}" not in args
+        stdin = "{script}" not in args and script is not None
         try:
             override_defaults = {}
             log.info("Using stdin: {}".format(stdin))
@@ -62,9 +61,10 @@ class CurlbombTestBase(unittest.TestCase):
                 override_defaults['stdin'] = s
             else:
                 s = NamedTemporaryFile()
-                s.write(script)
-                s.flush()
-                args = args.format(script=s.name)
+                if script is not None:
+                    s.write(script)
+                    s.flush()
+                    args = args.format(script=s.name)
             args = shlex.split(args)
             log.info("starting curlbomb: {}".format(args))
             settings = curlbomb.get_settings(args, override_defaults)
@@ -76,14 +76,7 @@ class CurlbombTestBase(unittest.TestCase):
         finally:
             s.close()
 
-    def setUp(self):
-        global curlbomb_thread
-        if curlbomb_thread:
-            #tornado.ioloop.IOLoop.current().stop()
-            curlbomb_thread.join()
-            curlbomb_thread = None
-
-    def run_client(self, client_cmd, expected_out, expected_err=None):
+    def run_client(self, client_cmd, expected_out=None, expected_err=None):
         # Have to run explicitly in bash to get subprocesses to work:
         client_cmd = ['bash','-c',client_cmd]
         log.info("starting client: {}".format(client_cmd))
@@ -93,8 +86,9 @@ class CurlbombTestBase(unittest.TestCase):
         client_out = client_out.decode("utf-8")
         client_err = client_err.decode("utf-8")
         log.info('client out: {}'.format(repr(client_out)))
-        self.assertEquals(client_out, expected_out)
-        if expected_err:
+        if expected_out is not None:
+            self.assertEquals(client_out, expected_out)
+        if expected_err is not None:
             self.assertIsNotNone(expected_err.search(client_err))
 
         return client_out, client_err
@@ -183,4 +177,75 @@ class CurlbombTestBase(unittest.TestCase):
 
     def test_unwrapped(self):
         self.simple_runner('--unwrapped', *client_scripts['short'])
-        
+
+    def __get_directory_contents(self, path):
+        """Get filenames of a directory in tar-like output format"""
+        parent_path, path_name = os.path.split(path)
+        contents = []
+        for root, dirs, files in os.walk(path):
+            contents.append(os.path.relpath(root,  parent_path) + '/')
+            for f in files:
+                contents.append(os.path.relpath(os.path.join(root, f), parent_path))
+        return sorted(contents)
+
+    def __get_directory_sha256(self, path):
+        """Get sha256sum of each file in a directory, recursively"""
+        parent_path, path_name = os.path.split(path)
+        path_shas = {} # path -> sha
+        for root, dirs, files in os.walk(path):
+            for fn in (os.path.join(root, f) for f in files):
+                with open(fn) as f:
+                    path_shas[os.path.relpath(fn, parent_path)] = hashlib.sha256(
+                        f.read().encode('utf-8')).hexdigest()
+        return path_shas
+
+    def __put_get_test(self, operation):
+        curdir = os.path.abspath(os.path.curdir)
+        try:
+            # Transfer a single test directory recursively
+            test_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'test_scripts', 'some_files')
+            contents = self.__get_directory_contents(test_path)
+            test_shas = self.__get_directory_sha256(test_path)
+
+            def dest_assert(client_out, destdir):
+                if operation=='put':
+                    # Make sure client out matches the directory listing:
+                    self.assertEqual(sorted(client_out.splitlines()), contents)
+                # Make sure the destination actually contains all the files:
+                dest_contents = self.__get_directory_contents(
+                    os.path.join(destdir, 'some_files'))
+                self.assertEqual(contents, dest_contents)
+                # Make sure the contents of each file are identical:
+                self.assertEqual(test_shas, self.__get_directory_sha256(
+                    os.path.join(destdir, 'some_files')))
+            
+            # put/get operation with explicit destination directory:
+            with tempfile.TemporaryDirectory() as tempdir:
+                os.chdir(tempdir)
+                with tempfile.TemporaryDirectory() as destdir:
+                    try:
+                        cb, client_cmd = self.get_curlbomb('{operation} {source} {dest}'.format(
+                            operation=operation, source=test_path, dest=destdir))
+                        client_out, client_err = self.run_client(client_cmd)
+                        cb.join()
+                        dest_assert(client_out, destdir)
+                    finally:
+                        pass
+            
+            # put/get operation with implicit destination directory:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                os.chdir(tmpdir)
+                cb, client_cmd = self.get_curlbomb('{operation} {source}'.format(
+                    operation=operation, source=test_path))
+                client_out, client_err = self.run_client(client_cmd)
+                dest_assert(client_out, tmpdir)
+
+        finally:
+            os.chdir(curdir)
+
+    def test_put(self):
+        self.__put_get_test('put')
+
+    def test_get(self):
+        self.__put_get_test('get')
