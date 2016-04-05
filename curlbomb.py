@@ -341,7 +341,7 @@ def run_server(settings):
     )
 
     unwrapped_script = get_curlbomb_command(settings, unwrapped=True)
-    if not settings['client_quiet']:
+    if not settings['client_quiet'] and settings['time_command']:
         unwrapped_script = "time "+unwrapped_script
 
     app = tornado.web.Application(
@@ -499,6 +499,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
     return parser
 
 def prepare_run_command(args, settings):
+    settings['time_command'] = True
     settings['shell_command'] = args.command
 
     if args.resource == sys.stdin:
@@ -523,22 +524,28 @@ def prepare_run_command(args, settings):
             settings['shell_command'] = "bash"
         
 def prepare_put_command(args, settings):
-    settings['client_quiet'] = True
-    paths = " ".join([shlex.quote(x) for x in glob.glob(args.source[0])])
-    cmd = shlex.split('tar cjh {}'.format(paths))
+    path = glob.glob(args.source[0])[0]
+    parent_path, path = os.path.split(os.path.abspath(path))
+    cmd = shlex.split('tar cjh -C {parent_path} {path}'.format(parent_path=shlex.quote(parent_path), path=shlex.quote(path)))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     args.resource = settings['resource'] = p.stdout
-    settings['shell_command'] = 'tar xjvf'
+    if args.dest:
+        settings['shell_command'] = 'cd {dest} && tar xjvf'.format(dest=shlex.quote(args.dest))
+    else:
+        settings['shell_command'] = 'tar xjvf'
 
 def prepare_get_command(args, settings):
     settings['client_quiet'] = True
     if args.dest is None:
-        args.dest = os.curdir
-    cmd = shlex.split('tar xzv')
+        dest = os.curdir
+    else:
+        dest = shlex.quote(args.dest)
+    cmd = shlex.split('tar xzv -C {dest}'.format(dest=dest))
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     settings['log_file'] = p.stdin
+    parent_path, path = os.path.split(os.path.abspath(args.source[0]))
     args.resource = settings['resource'] = BytesIO(
-        bytes("tar czh {}".format(args.source[0]), "utf-8"))
+        bytes("cd {parent_path} && tar czh {path}".format(parent_path=shlex.quote(parent_path), path=shlex.quote(path)), "utf-8"))
     
 def get_settings(args=None, override_defaults={}):
     """Parse args and set other settings based on them
@@ -572,7 +579,8 @@ def get_settings(args=None, override_defaults={}):
         'require_knock_from_environment': True,
         'wget': args.wget,
         'unwrapped': args.unwrapped,
-        'stdin': sys.stdin
+        'stdin': sys.stdin,
+        'time_command': False
     }
     settings.update(override_defaults)
     
