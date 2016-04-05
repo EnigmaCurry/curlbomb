@@ -239,6 +239,7 @@ class CurlbombTestBase(unittest.TestCase):
                 cb, client_cmd = self.get_curlbomb('{operation} {source}'.format(
                     operation=operation, source=test_path))
                 client_out, client_err = self.run_client(client_cmd)
+                cb.join()
                 dest_assert(client_out, tmpdir)
 
         finally:

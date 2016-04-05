@@ -419,8 +419,10 @@ def run_server(settings):
         if httpd.ssh_conn is not None:
             httpd.ssh_conn.kill()
         settings['resource'].close()
-        if settings['log_file']:
+        if settings['log_process']:
             settings['log_file'].close()
+            settings['log_process'].wait()
+            log.info("run_server done")
 
 class ArgumentIsFileException(Exception):
     def __init__(self, path):
@@ -544,6 +546,7 @@ def prepare_get_command(args, settings):
     else:
         dest = shlex.quote(args.dest)
     p = subprocess.Popen(['tar','xzv','-C',dest], stdin=subprocess.PIPE)
+    settings['log_process'] = p
     settings['log_file'] = p.stdin
     parent_path, path = os.path.split(os.path.abspath(args.source[0]))
     args.resource = settings['resource'] = BytesIO(
@@ -577,6 +580,7 @@ def get_settings(args=None, override_defaults={}):
         'quiet': args.quiet and not args.verbose,
         'client_logging': args.client_logging,
         'client_quiet': False,
+        'log_process': None,
         'log_file': None,
         'require_knock_from_environment': True,
         'wget': args.wget,
