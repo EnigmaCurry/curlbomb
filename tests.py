@@ -250,3 +250,22 @@ class CurlbombTestBase(unittest.TestCase):
 
     def test_get(self):
         self.__put_get_test('get')
+
+    def test_ssl(self):
+        script, expected_out = client_scripts['short']
+        ca_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              'test_scripts/tls')
+        ca_pem = os.path.join(ca_dir, 'test.pem')
+        ca_chain = os.path.join(ca_dir, 'test_chain.pem')
+        cb, client_cmd = self.get_curlbomb(
+            '--domain localhost --ssl {ca_pem}'.format(ca_pem=ca_pem), script)
+        # Try running without SSL certificate authority known:
+        client_out, client_err = self.run_client(client_cmd)
+        self.assertTrue("SSL certificate problem" in client_err)
+        # Try again by instructing curl where to find the CA cert:
+        os.environ['CURL_CA_BUNDLE'] = ca_chain
+        try:
+            client_out, client_err = self.run_client(client_cmd, expected_out)
+        finally:
+            del os.environ['CURL_CA_BUNDLE']
+            
