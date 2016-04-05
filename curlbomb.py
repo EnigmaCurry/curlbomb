@@ -564,28 +564,51 @@ def get_settings(args=None, override_defaults={}):
     args = parser.parse_args(args)
         
     settings = {
+        # Instruct client to post stdout back to the server:
         'receive_postbacks': True,
+        # Run client script with this shell interpreter:
         'shell_command': 'bash',
+        # Client fetches URL resources with this command:
         'http_fetcher': 'curl -LSs',
+        # Mime type to serve resource as:
         'mime_type': args.mime_type,
+        # Client should send it's hostname in the request header:
         'require_hostname_header': True,
+        # Log client stdout to server stdout:
         'log_post_backs': args.log_post_backs,
+        # Enable TLS
         'ssl': args.ssl,
+        # Total number of allowed HTTP gets on resource:
         'num_gets': args.num_gets,
+        # Require X-knock header:
         'require_knock': not args.disable_knock,
+        # The current knock:
         'knock': None,
+        # Server verbose flag
         'verbose': args.verbose,
+        # Print curl command without shell_command
         'survey': args.survey,
+        # SSH tunnel
         'ssh': args.ssh,
+        # Server quiet flag
         'quiet': args.quiet and not args.verbose,
+        # Log stdout on client:
         'client_logging': args.client_logging,
+        # Client quiet flag
         'client_quiet': False,
+        # Popen object processing log_post_backs
         'log_process': None,
+        # File to receive log_post_backs:
         'log_file': None,
+        # Don't print knock in wrapped curlbomb command:
         'require_knock_from_environment': True,
+        # Client should use wget instead of curl
         'wget': args.wget,
+        # Don't wrap curlbomb 
         'unwrapped': args.unwrapped,
+        # Use alternative stdin, only used in tests
         'stdin': sys.stdin,
+        # Output how long the command takes:
         'time_command': False
     }
     settings.update(override_defaults)
