@@ -17,11 +17,13 @@ log = logging.getLogger("curlbomb.test")
 log.setLevel(level=logging.INFO)
 
 client_scripts = {
-    'long': ("echo 'start' && sleep 3 && echo 'done'", "start\ndone\n"),
+    'long': ("echo 'start' && sleep 2 && echo 'done'", "start\ndone\n"),
     'short': ("echo 'hello'", "hello\n"),
     'python': ("#!/usr/bin/env python3\nprint(2+2)","4\n"),
     'python_no_shebang': ("print(2+2)","4\n")    
 }
+
+
 
 class CurlbombThread(threading.Thread):
     def __init__(self, settings):
@@ -100,6 +102,7 @@ class CurlbombTestBase(unittest.TestCase):
     def simple_runner(self, args, script, expected_out):
         cb, client_cmd = self.get_curlbomb(args, script)
         client_out, client_err = self.run_client(client_cmd, expected_out)
+        return (cb, client_cmd, client_out, client_err)
 
     def test_default_args(self):
         self.simple_runner('', *client_scripts['short'])
@@ -116,7 +119,6 @@ class CurlbombTestBase(unittest.TestCase):
         client_out, client_err = self.run_client(client_cmd_no_knock, 'Invalid knock\r\n')
         # Test again with knock:
         client_out, client_err = self.run_client(client_cmd, expected_out)
-        
 
     def test_multi_gets(self):
         script, expected_out = client_scripts['short']
@@ -154,3 +156,31 @@ class CurlbombTestBase(unittest.TestCase):
         cb, client_cmd = self.get_curlbomb('--unwrapped run -c source', script)
         self.assertTrue(client_cmd.startswith('source '))
         client_out, client_err = self.run_client(client_cmd, expected_out)
+
+    def test_domain(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('',0))
+        port = s.getsockname()[1]
+        s.close()
+        cb, client_cmd, out, err = self.simple_runner(
+            '-p {port} -d localhost:{port}'.format(port=port),
+            *client_scripts['short'])
+        self.assertTrue("http://localhost:{port}".format(port=port) in client_cmd)
+
+
+    def test_log_posts(self):
+        script, expected_out = client_scripts['short']
+        cb, client_cmd = self.get_curlbomb('-l', script)
+        try:
+            # Capture stdout via temporary monkey patch :
+            original_stdout = sys.stdout
+            out = sys.stdout = TextIOWrapper(BytesIO())
+            client_out, client_err = self.run_client(client_cmd, expected_out)
+            out.seek(0)
+            self.assertEquals(out.read(), client_out)
+        finally:
+            sys.stdout = original_stdout
+
+    def test_unwrapped(self):
+        self.simple_runner('--unwrapped', *client_scripts['short'])
+        
