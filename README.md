@@ -216,7 +216,7 @@ then the `run` subcommand is used implicitly.
 ### The following arguments apply to all subcommands:
 
 `-k, --disable-knock` Don't require a X-knock HTTP header from the
-client. Normally curlbombs are one-time-use and meant to be
+client. Normally, curlbombs are one-time-use and meant to be
 copy-pasted from terminal to terminal. If you're embedding into a
 script, you may not know the knock parameter ahead of time and so this
 disables that. This is inherently less secure than the default.
@@ -237,22 +237,23 @@ that. This is useful if you are setting up your own port forwards and
 need to show an external URL.
 
 `-w, --wget` Print wget syntax rather than curl syntax. Useful in the
-case where the client doesn't have curl installed.
+case where the client doesn't have curl installed. Not compatible with
+`--log--posts` or the `put` and `get` subcommands. :(
 
-`-l, --log-posts` Log the client output from the curlbomb server. 
+`-l, --log-posts` Log the client stdout to the server stdout
 
 `-q, --quiet` Be more quiet. Don't print the client curlbomb command.
 
-`-v, --verbose` Be more verbose. Turns off --quiet, enables
---log-posts, and enables INFO level logging within curlbomb.
+`-v, --verbose` Be more verbose. Turns off `--quiet`, enables
+`--log-posts`, and enables INFO level logging within curlbomb.
 
 `--ssh SSH_FORWARD` Forwards the curlbomb server to a remote port of
 another computer through SSH. This is useful to serve curlbombs to
 clients on another network without opening up any ports to the machine
 running curlbomb. The syntax for SSH_FORWARD is
 [user@]host[:ssh_port][:http_port]. The SSH server must have the
-GatewayPorts (see: man sshd_config) setting turned on to allow remote
-clients to connect to this port.
+GatewayPorts setting turned on to allow remote clients to connect to
+this port. See sshd_config(5).
 
 `--ssl CERTIFICATE` Run the HTTP server with TLS encryption. Give the
 full path to your SSL certificate, optionally PGP (ascii-armored)
@@ -260,7 +261,7 @@ encrypted. The file should contain the entire certificate chain,
 including the CA certificate, if any.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
-shell command. Useful for testing out script retrieval without running
+shell command. Useful for testing script retrieval without running
 them.
 
 `--unwrapped` output the full curlbomb command, including all the
@@ -312,7 +313,7 @@ also leave this blank (or specify '-') and the resource will be read
 from stdin.
 
 Note that the run subcommand is implied if you are pipeing data to
-curlbomb. For instnace, this command is assumed that the run command
+curlbomb. For instance, this command is assumed that the run command
 is desired even if not explicitly used:
 
     echo "./run_server.sh" | curlbomb
@@ -328,6 +329,9 @@ Which is equivalent to:
 Copies file(s) from the local SOURCE path to the remote DEST path. If
 a directory is specified, all child paths will be copied recursively.
 
+If DEST path is unspecified, files/directories will be copied to the
+working directory of wherever the client was run.
+
 Exclude patterns can be specified like tar(1)
 
 ### Get subcommand
@@ -336,5 +340,8 @@ Exclude patterns can be specified like tar(1)
 
 Copies file(s) from the remote SOURCE path to the local DEST path. If
 a directory is specified, all child paths will be copied recursively.
+
+If DEST path is unspecified, files/directories will be copied to the
+working directory of wherever curlbomb was run.
 
 Exclude patterns can be specified like tar(1)
