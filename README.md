@@ -96,7 +96,7 @@ Or type it interactively:
     echo "bad idea, I don't have spollcheck when I typ in the terminal"
 
 (The single dash says to read from stdin, even when nothing is being
-piped.)
+piped. Ctrl-D ends the interactive input.)
 
 The shebang line (#!) is interpreted and automatically changes the
 interpreter the client runs, the following example runs the script
@@ -126,7 +126,7 @@ subcommands:
     curlbomb put ~/.ssh '$HOME' --exclude='*rsa'
 
 The `put` and `get` subcommands are just convenience wrappers for
-running tar on both ends of the curlbomb pipe. You could achieve the
+running tar on both ends of the curlbomb pipe. You *could* achieve the
 same thing more generically:
 
     # Copy a local directory to a client, the hard way:
@@ -175,9 +175,10 @@ The example above is passing a bit of secure information; a
 password. Even without TLS, curlbomb secures access with a knock
 parameter. For many use-cases, this is sufficient to secure it, as
 curlbombs are short lived and can only be retrieved one time (`-n
-1`). However, the connection itself might be spied on through traffic
-analysis at your ISP or any other router your connection flows
-through. Using TLS makes sure this doesn't happen. 
+1`). However, the connection itself might be spied on (or even
+modified!) through traffic analysis at your ISP or any other router
+your connection flows through. Using TLS makes sure this doesn't
+happen. 
 
 Note that when combined with the --ssh parameter, the SSL certificate
 should be generated for the host running the SSH server rather than
