@@ -9,7 +9,7 @@ if os.path.exists('README.txt'):
         long_description=f.read()
 
 setup(name='curlbomb',
-      version='1.2.0',
+      version='1.2.1',
       description=description,
       long_description=long_description,
       license="MIT",
@@ -22,7 +22,7 @@ setup(name='curlbomb',
       author_email='ryan@enigmacurry.com',
       url='https://github.com/EnigmaCurry/curlbomb',
       py_modules=['curlbomb'],
-      install_requires=['tornado'],
+      install_requires=['tornado','notify2'],
       include_package_data = True,
       entry_points={
           'console_scripts': ['curlbomb = curlbomb:main']},

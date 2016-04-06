@@ -33,6 +33,8 @@ import tempfile
 import time
 from io import BytesIO
 import re
+import urllib
+from collections import OrderedDict
 
 import tornado.web
 import tornado.ioloop
@@ -49,7 +51,7 @@ def get_version():
         return pkg.version
     else:
         return 'DEV'
-
+    
 class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     """Base RequestHandler
 
@@ -60,7 +62,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     
     def initialize(self, resource, state, allowed_gets=1, knock=None,
                    mime_type='text/plain', allow_post_backs=False,
-                   log_post_backs=False, log_file=None):
+                   log_post_backs=False, log_file=None, get_callback=None):
         """Arguments:
         
           resource         - A file like object to serve the contents of
@@ -72,6 +74,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
                              Delays server termination until post_backs == allowed_gets
           log_post_backs   - Log post backs to stdout
           log_file         - Log post backs to file
+          get_callback     - callback to run when get is finished, passes request
           *args            - The rest of the RequestHandler args
           **kwargs         - The rest of the RequestHandler kwargs
         """
@@ -80,6 +83,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
         self._knock = knock
         self._mime_type = mime_type
         self._allow_post_backs = allow_post_backs
+        self._get_callback = get_callback
         self._log_post_backs = log_post_backs
         self._log_file = log_file
         
@@ -144,6 +148,8 @@ class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
         self.finish()
         if self._state['num_gets'] < self._allowed_gets:
             self._resource.seek(0)
+        if self._get_callback is not None:
+            self._get_callback(self.request)
         self.shutdown_if_ready()
 
 @tornado.web.stream_request_body
@@ -339,10 +345,11 @@ def run_server(settings):
         mime_type=settings['mime_type'],
         allow_post_backs=settings['receive_postbacks'],
         log_post_backs=settings['log_post_backs'],
-        log_file=settings['log_file']
+        log_file=settings['log_file'],
+        get_callback=settings.get('get_callback', None)
     )
 
-    unwrapped_script = get_curlbomb_command(settings, unwrapped=True)
+    unwrapped_script = settings['get_curlbomb_command'](settings, unwrapped=True)
     if not settings['client_quiet'] and settings['time_command']:
         unwrapped_script = "time "+unwrapped_script
 
@@ -404,7 +411,7 @@ def run_server(settings):
             log.error(httpd.ssh_conn.last_msg)
             sys.exit(1)
 
-    cmd = get_curlbomb_command(settings)
+    cmd = settings['get_curlbomb_command'](settings)
     if not settings['quiet']:
         if settings['stdout'].isatty():
             sys.stderr.write("Paste this command on the client:\n")
@@ -428,6 +435,8 @@ def run_server(settings):
             settings['log_process'].wait()
             log.info("run_server done")
 
+    return settings.get('return_code', 0)
+
 class ArgumentIsFileException(Exception):
     def __init__(self, path):
         self.path = path
@@ -439,6 +448,13 @@ def argparser(formatter_class=argparse.HelpFormatter):
         description='curlbomb is an HTTP server for serving one-time-use shell scripts',
         formatter_class=formatter_class)
     subparsers = parser.add_subparsers()
+
+    def return_code(x):
+        x = int(x)
+        if x<0 or x>255:
+            raise ValueError("valid range is 0-255")
+        return x
+    
     parser.add_argument('-n', '--num-gets', metavar="N",
                         help="Number of times to serve resource (default:1)",
                         type=int, default=1)
@@ -513,6 +529,26 @@ def argparser(formatter_class=argparse.HelpFormatter):
                             help="Exclude files matching PATTERN, "
                             "a glob(3)-style wildcard pattern", default=[])
     get_parser.set_defaults(prepare_command=prepare_get_command)
+
+    ping_parser = subparsers.add_parser(
+        'ping', help="Waits for client(s) to make a request, containing optional "
+        "message and return parameters. Returns 0 or the last non-zero return "
+        "parameter received from client(s).")
+    ping_parser.add_argument('-m', '--message',
+                             help="Adds message parameter to ping request")
+    ping_parser.add_argument('-r', '--return', dest='return_code',
+                             type=return_code,
+                             help="Adds return parameter to ping request")
+    ping_parser.add_argument(
+        '--return-success', action='store_true',
+        help="Always return 0 regardless of the 'return' parameter the "
+        "client(s) sends back")
+    ping_parser.add_argument('-c','--command', help="Command to run on ping. "
+                             "string formatters include: {return_code}, {message} "
+                             "(don't use quotes around them)")
+    ping_parser.add_argument('-n', '--notify', action="store_true",
+                             help="Notify of ping via libnotify (python-notify2 package)")
+    ping_parser.set_defaults(prepare_command=prepare_ping_command)
     
     return parser
 
@@ -570,6 +606,68 @@ def prepare_get_command(args, settings):
     args.resource = settings['resource'] = BytesIO(
         bytes('tar czh {exclude} -C "{parent_path}" "{path}"'.format(
             parent_path=parent_path, path=path, exclude=exclude_args), "utf-8"))
+
+def prepare_ping_command(args, settings):
+    settings['resource'] = BytesIO(b'')
+    settings['survey'] = True
+    settings['receive_postbacks'] = False
+    
+    def get_ping_command(settings, unwrapped=None):
+        params = OrderedDict()
+        if settings['require_knock']:
+            params['knock'] = settings['knock']
+        if args.message:
+            params['message'] = args.message
+        if args.return_code:
+            params['return'] = args.return_code
+        
+        return "curl -LSs 'http{ssl}://{host}:{port}/r{query_params}'".format(
+            ssl="s" if settings['ssl'] is not None else "",
+            host=settings['display_host'],
+            port=settings['display_port'],
+            query_params="?"+urllib.parse.urlencode(
+                params) if len(params)>0 else ""
+            )
+    settings['get_curlbomb_command'] = get_ping_command
+
+    def get_callback(request):
+        # Handle return code parameter:
+        return_code = request.arguments.get('return', [b"0"])[0]
+        message = request.arguments.get('message', [b""])[0].decode("utf-8")
+        try:
+            return_code = int(return_code)
+        except ValueError:
+            log.warn("Client ping specified non-integer return code: {}".format(
+                return_code))
+            return_code = 0
+        # Only change the return code if it's not 0.
+        # This way multiple clients can ping and
+        # all must be successful to return 0:
+        if return_code != 0 and not args.return_success:
+            settings['return_code'] = return_code
+
+        # Handle notification command (-c)
+        if args.command is not None:
+            command = args.command.format(
+                return_code=return_code, message='"{}"'.format(message.replace(r'"',r'\"')))
+            log.info("Running notification command: {}".format(shlex.split(command)))
+            out = subprocess.Popen(shlex.split(command),
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT).communicate()[0]
+            log.info("notification out: {}".format(out))
+
+        # Handle desktop notification (-n)
+        if args.notify:
+            try:
+                import notify2
+                notify2.init("curlbomb")
+            except ImportError:
+                log.error("Desktop notifications are disabled. Please install "
+                          "python-notify2 package to enable.")
+            else:
+                notify2.Notification("Ping", message).show()
+                
+    settings['get_callback'] = get_callback
     
 def get_settings(args=None, override_defaults={}):
     """Parse args and set other settings based on them
@@ -630,7 +728,9 @@ def get_settings(args=None, override_defaults={}):
         # Use alternative stdout, only used in tests
         'stdout': sys.stdout,
         # Output how long the command takes:
-        'time_command': False
+        'time_command': False,
+        # Function to get curlbomb command given settings:
+        'get_curlbomb_command': get_curlbomb_command
     }
     settings.update(override_defaults)
     
@@ -720,7 +820,7 @@ def get_settings(args=None, override_defaults={}):
 
 def main():
     settings = get_settings()
-    run_server(settings)
+    return run_server(settings)
     
 if __name__ == "__main__":
-    main()
+    exit(main())

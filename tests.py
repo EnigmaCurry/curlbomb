@@ -31,12 +31,13 @@ client_scripts = {
 class CurlbombThread(threading.Thread):
     def __init__(self, settings):
         threading.Thread.__init__(self)
-        self.__settings=settings
+        self.settings=settings
+        self.returncode = None
         
     def run(self):
         log.info('Starting server')
         try:
-            curlbomb.run_server(self.__settings)
+            self.returncode = curlbomb.run_server(self.settings)
         finally:
             log.info('Server finished')
 
@@ -68,7 +69,7 @@ class CurlbombTestBase(unittest.TestCase):
             args = shlex.split(args)
             log.info("starting curlbomb: {}".format(args))
             settings = curlbomb.get_settings(args, override_defaults)
-            client_cmd = curlbomb.get_curlbomb_command(settings)
+            client_cmd = settings['get_curlbomb_command'](settings)
             curlbomb_thread = CurlbombThread(settings)
             curlbomb_thread.start()
             return (curlbomb_thread,
@@ -278,3 +279,38 @@ class CurlbombTestBase(unittest.TestCase):
         finally:
             del os.environ['CURL_CA_BUNDLE']
             
+    def test_ping(self):
+        args = 'ping'
+        cb, client_cmd = self.get_curlbomb(args)
+        self.assertTrue(client_cmd.startswith('curl '))
+        self.assertIn('knock={}'.format(cb.settings['knock']), client_cmd)
+
+        # Try pinging with incorrect knock:
+        client_cmd_no_knock = re.sub('knock=[a-zA-Z0-9_.]*', 'knock=wrong',
+                                     client_cmd)
+        client_out, client_err = self.run_client(client_cmd_no_knock)
+        self.assertIn("Invalid knock", client_out)
+
+        # Ping with corrent knock
+        client_out, client_err = self.run_client(client_cmd)
+        self.assertEquals(cb.returncode, 0)
+
+    def test_multi_ping_return(self):
+        """Tests multiple clients pinging and testing valid return code"""
+        # Test three clients all not specifying any return:
+        args = '-n 3 ping -m "Test message"'
+        cb, client_cmd = self.get_curlbomb(args)
+        for x in range(3):
+            self.run_client(client_cmd)
+        cb.join()
+        self.assertEquals(cb.returncode, 0)
+
+        # Test three clients one specifying a non-zero return:
+        args = '-n 3 ping -m "Test message"'
+        cb, client_cmd = self.get_curlbomb(args)
+        self.run_client(client_cmd)
+        self.run_client(re.sub('\?knock','?return=42&knock', client_cmd))
+        self.run_client(client_cmd)
+        cb.join()
+        # Return code should be the last non-zero response:
+        self.assertEquals(cb.returncode, 42)

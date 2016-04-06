@@ -349,3 +349,26 @@ If DEST path is unspecified, files/directories will be copied to the
 working directory of wherever curlbomb was run.
 
 Exclude patterns can be specified like tar(1)
+
+### Ping subcommand
+
+    curlbomb ping [-m MESSAGE] [-r RETURN_CODE] [--return-success]
+	              [-c COMMAND] [-n]
+
+Serves an empty body resource for the purposes of pinging the server
+when the client has finished some task.
+
+`-m` sets the message the client will respond with.
+
+`-r` sets the return code the client will respond with. This is used
+as the main curlbomb return code on the server as well. If `-n` > 1,
+the last non-zero return code received is used instead, defaulting to
+0.
+
+`--return-success` Always return 0, regardless of the return code(s)
+received.
+
+`-c COMMAND` Run this command for each ping received. You can use the
+following placeholders to format ping data: {return_code} and
+{message}. {message} is replaced surrounded by quotes, so no need to
+do that again in your command.
