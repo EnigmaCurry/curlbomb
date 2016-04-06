@@ -75,7 +75,7 @@ class ManPageFormatter(argparse.HelpFormatter):
                  ):
 
         super(ManPageFormatter, self).__init__(prog)
-
+        
         self._prog = prog
         self._section = 1
         self._today = datetime.date.today().strftime('%Y\\-%m\\-%d')
@@ -132,7 +132,7 @@ class ManPageFormatter(argparse.HelpFormatter):
 
     def _mk_section(self, name, content):
         content = content.replace('\n', '\n.br\n')
-        content = re.sub(r"`(.*)` ", r"\\fB\\fC\1\\fR\n", content)
+        content = re.sub(r"\`(.*?)\`", r"\\fB\\fC\1\\fR", content)
         return '.SH %s\n%s\n' % (name.upper(), self._markup(content))
 
     def _mk_footer(self, sections):

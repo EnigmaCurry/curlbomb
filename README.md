@@ -9,17 +9,24 @@ you to install their software in one line, like this?
 
 I call that a curl bomb... I don't know if anyone else does.
 
-curlbomb serves a file (read from disk or stdin) to the first client
-to request it, then shuts down. A command is printed out that will
-construct the curl bomb the client needs to run, which includes the
-one-time-use passphrase (called a knock) that is required to download
-the resource. This command is copied and run in another shell, on some
-other computer, to download and run the script in one line.
+curlbomb serves a single file (read from disk or stdin) via HTTP to
+the first client to request it, then shuts down. A command is printed
+out that will construct the curl bomb the client needs to run, which
+includes a one-time-use passphrase (called a knock) that is required
+to download the resource. This command is copy/pasted (or typed) into
+another shell, on some other computer, which will download and run the
+script in one line.
 
 curlbomb has optional integration with OpenSSL to secure
 communications. OpenSSH is supported as well, to make it easy to
 curlbomb from anywhere on the internet, to anywhere else, through a
 proxy server that you can forward the port through.
+
+curlbomb is well tested, but not intended for heavy automation
+work. There are better alternatives to choose from (saltstack,
+ansible, puppet, etc.) curlbomb can be used effectively in doing the
+front work for setting up these other tools, like copying SSH keys and
+installing packages.
 
 ## Install
 
@@ -73,20 +80,20 @@ You can pipe scripts directly into curlbomb:
     echo "pacman --noconfirm -S openssh && systemctl start sshd" | curlbomb
 	
 Whenever you pipe data to curlbomb you can omit the `run` subcommand,
-it's assumed that you want to run it from stdin.
+it's assumed that you want to run a script from stdin.
 	
 This works in shell scripts too:
 
     cat <<EOF | curlbomb
     #!/bin/bash
     echo "I'm a script output from another script on another computer"
-	EOF
+    EOF
 
 Or type it interactively:
 
     $ curlbomb run -
-	pkg instll sqlite3
-	echo "bad idea, I don't have spollcheck when I typ in the terminal"
+    pkg instll sqlite3
+    echo "bad idea, I don't have spollcheck when I typ in the terminal"
 
 (The single dash says to read from stdin, even when nothing is being
 piped.)
@@ -96,29 +103,37 @@ interpreter the client runs, the following example runs the script
 with python instead of the default bash:
 
     cat <<EOF | curlbomb
-	#!/usr/bin/env python3
-	import this
-	print("Hello, from Python!")
-	EOF
+    #!/usr/bin/env python3
+    import this
+    print("Hello, from Python!")
+    EOF
 
 curlbomb can also transfer files and directories with `put` and `get`
-commands:
+subcommands:
 
-    # Recursively copy a local directory to a client:
-	curlbomb put ~/.ssh 
-	
-	# Recursively copy remote directory to the server:
-	curlbomb get /var/log 
+    # Recursively copy a directory 
+    # (to whatever directory the client is run from):
+    curlbomb put ~/.ssh
+
+    # Recursively copy a remote directory to the server
+    # (to whatever directory the server is run from)
+    curlbomb get /var/log 
+
+    # Recursively copy a directory
+    #  - Specifies the explicit remote destination directory.
+    #  - Environment vars in single quotes are evaluated on the remote end.
+    #  - Excludes some files you may want to keep private.
+    curlbomb put ~/.ssh '$HOME' --exclude='*rsa'
 
 The `put` and `get` subcommands are just convenience wrappers for
 running tar on both ends of the curlbomb pipe. You could achieve the
-same thing manually:
+same thing more generically:
 
     # Copy a local directory to a client, the hard way:
-	tar cjh -C $HOME .ssh | curlbomb run -c "tar xjv -f"
-	
-	# Copy a remote directory to the server, the hard way:
-	echo "tar cjh -C /var log" | curlbomb -l --client-quiet | tar xjv
+    tar cjh -C $HOME .ssh | curlbomb run -c "tar xjv -f"
+    
+    # Copy a remote directory to the server, the hard way:
+    echo "tar cjh -C /var log" | curlbomb -l --client-quiet | tar xjv
 
 The first example has a `run -c` parameter that tells the client that
 we want to interpret the data as being a tar archive rather than a
@@ -147,7 +162,7 @@ not open this up to the rest of the world. If you want any client to
 be able to connect to example.com:8080 you will need to modify the
 sshd_config of the server to allow GatewayPorts:
 
-	# Put this in your /etc/ssh/sshd_config and restart your ssh service:
+    # Put this in your /etc/ssh/sshd_config and restart your ssh service:
     GatewayPorts clientspecified
 
 ### TLS / SSL security
@@ -279,7 +294,7 @@ file called curlbomb.log
 
 ### Run subcommand
 
-`curlbomb run [-c COMMAND] [SCRIPT]`
+    curlbomb run [-c COMMAND] [SCRIPT]
 
 Runs a shell script on the remote client.
 
@@ -308,12 +323,18 @@ Which is equivalent to:
 
 ### Put subcommand
 
-`curlbomb put SOURCE [DEST]`
+    curlbomb put [--exclude=PATTERN] SOURCE [DEST]
 
-Copies file(s) from the local SOURCE path to the remote DEST path. If a directory is specified, all child paths will be copied recursively.
+Copies file(s) from the local SOURCE path to the remote DEST path. If
+a directory is specified, all child paths will be copied recursively.
+
+Exclude patterns can be specified like tar(1)
 
 ### Get subcommand
 
-`curlbomb get SOURCE [DEST]`
+    curlbomb get [--exclude=PATTERN] SOURCE [DEST]
 
-Copies file(s) from the remote SOURCE path to the local DEST path. If a directory is specified, all child paths will be copied recursively.
+Copies file(s) from the remote SOURCE path to the local DEST path. If
+a directory is specified, all child paths will be copied recursively.
+
+Exclude patterns can be specified like tar(1)

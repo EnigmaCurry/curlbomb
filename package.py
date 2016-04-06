@@ -19,7 +19,8 @@ with open('README.txt','w+') as rst_file:
     rst_file.write(pypandoc.convert(readme,'rst', format='markdown'))
 
 ### Build manpage
-parts = re.split("^##?.*", readme, flags=re.MULTILINE)
+readme = re.sub(r'^### (.*)', r'`\1`', readme, flags=re.MULTILINE)
+parts = re.split("^##? .*", readme, flags=re.MULTILINE)
 long_description = parts[1]
 installation = parts[2]
 example_use = parts[3]
