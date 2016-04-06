@@ -405,10 +405,13 @@ def run_server(settings):
 
     cmd = get_curlbomb_command(settings)
     if not settings['quiet']:
-        sys.stderr.write("Paste this command on the client:\n")
-        sys.stderr.write("\n")
-        sys.stderr.write("  {}\n".format(cmd))
-        sys.stderr.write("\n")
+        if settings['stdout'].isatty():
+            sys.stderr.write("Paste this command on the client:\n")
+            sys.stderr.write("\n")
+            sys.stderr.write("  {}\n".format(cmd))
+            sys.stderr.write("\n")
+        else:
+            sys.stderr.write("{}\n".format(cmd))
             
     try:
         tornado.ioloop.IOLoop.current().start()
@@ -623,6 +626,8 @@ def get_settings(args=None, override_defaults={}):
         'unwrapped': args.unwrapped,
         # Use alternative stdin, only used in tests
         'stdin': sys.stdin,
+        # Use alternative stdout, only used in tests
+        'stdout': sys.stdout,
         # Output how long the command takes:
         'time_command': False
     }
@@ -696,6 +701,10 @@ def get_settings(args=None, override_defaults={}):
         settings['display_host'] = parts[0]
         if len(parts) > 1:
             settings['display_port'] = parts[1]
+
+    if not settings['stdout'].isatty() and not settings['quiet']:
+        # Imply we want log-posts if we pipe to a non-tty:
+        settings['log_post_backs'] = True
 
     try:
         prepare_cmd = args.prepare_command
