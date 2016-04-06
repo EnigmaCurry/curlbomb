@@ -204,10 +204,15 @@ class CurlbombTestBase(unittest.TestCase):
         try:
             # Transfer a single test directory recursively
             test_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'test_scripts', 'some_files')
+                os.path.dirname(os.path.abspath(__file__)),
+                'test_scripts', 'some_files')
             contents = self.__get_directory_contents(test_path)
+            # private.txt should not be transferred:
+            contents.remove(os.path.join(
+                'some_files','dir_2','dir_3','dir_4','private.txt'))
             test_shas = self.__get_directory_sha256(test_path)
-
+            del test_shas[os.path.join(
+                'some_files','dir_2','dir_3','dir_4','private.txt')]
             def dest_assert(client_out, destdir):
                 if operation=='put':
                     # Make sure client out matches the directory listing:
@@ -219,14 +224,17 @@ class CurlbombTestBase(unittest.TestCase):
                 # Make sure the contents of each file are identical:
                 self.assertEqual(test_shas, self.__get_directory_sha256(
                     os.path.join(destdir, 'some_files')))
-            
+
             # put/get operation with explicit destination directory:
-            with tempfile.TemporaryDirectory() as tempdir:
+            with tempfile.TemporaryDirectory(suffix=' spaces in name') \
+                 as tempdir:
                 os.chdir(tempdir)
                 with tempfile.TemporaryDirectory() as destdir:
                     try:
-                        cb, client_cmd = self.get_curlbomb('{operation} {source} {dest}'.format(
-                            operation=operation, source=test_path, dest=destdir))
+                        cb, client_cmd = self.get_curlbomb(
+                            '{operation} --exclude="private.txt" {source} {dest}'.\
+                            format(
+                                operation=operation, source=test_path, dest=destdir))
                         client_out, client_err = self.run_client(client_cmd)
                         cb.join()
                         dest_assert(client_out, destdir)
@@ -234,10 +242,11 @@ class CurlbombTestBase(unittest.TestCase):
                         pass
             
             # put/get operation with implicit destination directory:
-            with tempfile.TemporaryDirectory() as tmpdir:
+            with tempfile.TemporaryDirectory(suffix=' spaces in name') as tmpdir:
                 os.chdir(tmpdir)
-                cb, client_cmd = self.get_curlbomb('{operation} {source}'.format(
-                    operation=operation, source=test_path))
+                cb, client_cmd = self.get_curlbomb(
+                    '{operation} --exclude="private.txt" {source}'.format(
+                        operation=operation, source=test_path))
                 client_out, client_err = self.run_client(client_cmd)
                 cb.join()
                 dest_assert(client_out, tmpdir)

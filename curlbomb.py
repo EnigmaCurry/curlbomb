@@ -494,6 +494,9 @@ def argparser(formatter_class=argparse.HelpFormatter):
                             help="Local path to copy (or put glob in quotes)")
     put_parser.add_argument('dest', metavar="DEST", nargs='?',
                             help="Remote directory to copy to")
+    put_parser.add_argument('--exclude', metavar="PATTERN", action='append',
+                            help="Exclude files matching PATTERN, "
+                            "a glob(3)-style wildcard pattern", default=[])
     put_parser.set_defaults(prepare_command=prepare_put_command)
 
     get_parser = subparsers.add_parser(
@@ -502,6 +505,9 @@ def argparser(formatter_class=argparse.HelpFormatter):
                             help="Remote path to copy (or put glob in quotes)")
     get_parser.add_argument('dest', metavar="DEST", nargs='?',
                             help="Local directory to copy to")
+    get_parser.add_argument('--exclude', metavar="PATTERN", action='append',
+                            help="Exclude files matching PATTERN, "
+                            "a glob(3)-style wildcard pattern", default=[])
     get_parser.set_defaults(prepare_command=prepare_get_command)
     
     return parser
@@ -534,11 +540,13 @@ def prepare_run_command(args, settings):
 def prepare_put_command(args, settings):
     path = glob.glob(args.source[0])[0]
     parent_path, path = os.path.split(os.path.abspath(path))
-    cmd = shlex.split('tar czh -C {parent_path} {path}'.format(parent_path=shlex.quote(parent_path), path=shlex.quote(path)))
+    exclude_args = " ".join(["--exclude='{}'".format(p) for p in args.exclude])
+    cmd = shlex.split('tar czh {exclude} -C "{parent_path}" "{path}"'.format(
+        parent_path=parent_path, path=path, exclude=exclude_args))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     args.resource = settings['resource'] = p.stdout
     if args.dest:
-        settings['shell_command'] = 'cd {dest} && tar xzvf'.format(dest=shlex.quote(args.dest))
+        settings['shell_command'] = 'cd "{dest}" && tar xzvf'.format(dest=args.dest)
     else:
         settings['shell_command'] = 'tar xzvf'
 
@@ -547,13 +555,15 @@ def prepare_get_command(args, settings):
     if args.dest is None:
         dest = os.curdir
     else:
-        dest = shlex.quote(args.dest)
+        dest = args.dest
     p = subprocess.Popen(['tar','xzv','-C',dest], stdin=subprocess.PIPE)
     settings['log_process'] = p
     settings['log_file'] = p.stdin
-    parent_path, path = os.path.split(os.path.abspath(args.source[0]))
+    parent_path, path = os.path.split(args.source[0])
+    exclude_args = " ".join(["--exclude='{}'".format(p) for p in args.exclude])
     args.resource = settings['resource'] = BytesIO(
-        bytes("cd {parent_path} && tar czh {path}".format(parent_path=shlex.quote(parent_path), path=shlex.quote(path)), "utf-8"))
+        bytes('tar czh {exclude} -C "{parent_path}" "{path}"'.format(
+            parent_path=parent_path, path=path, exclude=exclude_args), "utf-8"))
     
 def get_settings(args=None, override_defaults={}):
     """Parse args and set other settings based on them
