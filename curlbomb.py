@@ -89,7 +89,8 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
         self.request.start_time = time.time()
         # Validate X-knock header if one is required:
         if self._knock is not None:
-            x_knock = self.request.headers.get('X-knock', None)
+            x_knock = self.get_argument(
+                'knock', self.request.headers.get('X-knock', None))
             if x_knock != self._knock:
                 log.info("Invalid knock")
                 raise tornado.web.HTTPError(401, 'Invalid knock')
