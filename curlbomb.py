@@ -435,8 +435,6 @@ def argparser(formatter_class=argparse.HelpFormatter):
         description='curlbomb is an HTTP server for serving one-time-use shell scripts',
         formatter_class=formatter_class)
     subparsers = parser.add_subparsers()
-    parser.add_argument('-k', '--disable-knock', action="store_true",
-                        help="Don't require authentication (no X-knock header)")
     parser.add_argument('-n', '--num-gets', metavar="N",
                         help="Number of times to serve resource (default:1)",
                         type=int, default=1)
@@ -478,6 +476,8 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         action="store_true")
     parser.add_argument('--mime-type', help="The content type to serve",
                         default="text/plain")
+    parser.add_argument('--disable-knock', action="store_true",
+                        help="Don't require authentication (no X-knock header)")
     parser.add_argument('--version', action="version", version=get_version())
 
     run_parser = subparsers.add_parser('run', help="Run a local script on the client")

@@ -199,10 +199,11 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 
 ## Command Line Args
 
-    usage: curlbomb [-h] [-k] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q]
-                    [-v] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
+    usage: curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
+                    [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
                     [--unwrapped] [--disable-postback] [--client-logging]
-                    [--client-quiet] [--mime-type MIME_TYPE] [--version]
+                    [--client-quiet] [--mime-type MIME_TYPE] [--disable-knock]
+                    [--version]
                     {run,put,get} ...
 				   
 curlbomb has a few subcommands:
@@ -215,12 +216,6 @@ If no subcommand is specified, and there is data being piped to stdin,
 then the `run` subcommand is used implicitly.
 
 ### The following arguments apply to all subcommands:
-
-`-k, --disable-knock` Don't require a X-knock HTTP header from the
-client. Normally, curlbombs are one-time-use and meant to be
-copy-pasted from terminal to terminal. If you're embedding into a
-script, you may not know the knock parameter ahead of time and so this
-disables that. This is inherently less secure than the default.
 
 `-n N, --num-gets N` The maximum number of times the script may be
 fetched by clients, defaulting to 1. Increasing this may be useful in
@@ -241,7 +236,9 @@ need to show an external URL.
 case where the client doesn't have curl installed. Not compatible with
 `--log--posts` or the `put` and `get` subcommands. :(
 
-`-l, --log-posts` Log the client stdout to the server stdout
+`-l, --log-posts` Log the client stdout to the server stdout. This is
+off by default, but is turned on automatically when you pipe curlbomb
+stdout to another process (unless you use -q.)
 
 `-q, --quiet` Be more quiet. Don't print the client curlbomb command.
 
@@ -291,6 +288,12 @@ file called curlbomb.log
 
 `--mime-type MIME_TYPE` The mime-type header to send, by default
 "text/plain"
+
+`--disable-knock` Don't require a X-knock HTTP header from the
+client. Normally, curlbombs are one-time-use and meant to be
+copy-pasted from terminal to terminal. If you're embedding into a
+script, you may not know the knock parameter ahead of time and so this
+disables that. This is inherently less secure than the default.
 
 `--version` Print the curlbomb version
 
