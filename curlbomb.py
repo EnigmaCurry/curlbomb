@@ -46,11 +46,13 @@ log.setLevel(level=logging.WARN)
 
 def get_version():
     import pkg_resources
-    pkg = pkg_resources.get_distribution('curlbomb')
+    try:
+        pkg = pkg_resources.get_distribution('curlbomb')
+    except pkg_resources.DistributionNotFound:
+        return 'DEV'
     if __file__.startswith(pkg.location):
         return pkg.version
-    else:
-        return 'DEV'
+    return 'DEV'
     
 class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     """Base RequestHandler
