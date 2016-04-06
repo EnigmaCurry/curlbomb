@@ -102,7 +102,7 @@ class CurlbombTestBase(unittest.TestCase):
         self.simple_runner('', *client_scripts['short'])
 
     def test_no_knock(self):
-        self.simple_runner('-k', *client_scripts['short'])
+        self.simple_runner('--disable-knock', *client_scripts['short'])
 
     def test_knock(self):
         script, expected_out = client_scripts['short']
