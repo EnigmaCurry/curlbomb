@@ -391,7 +391,7 @@ def run_server(settings):
             log.info("SSL certificate loaded")
     else:
         # No SSL
-        httpd = app.listen(settings['port'])
+        httpd = app.listen(settings['port'], max_buffer_size=1024E9)
 
     ## Start SSH tunnel if requested:
     httpd.ssh_conn = None
@@ -560,6 +560,8 @@ def prepare_get_command(args, settings):
     settings['log_process'] = p
     settings['log_file'] = p.stdin
     parent_path, path = os.path.split(args.source[0])
+    if len(parent_path) == 0:
+        parent_path = os.curdir
     exclude_args = " ".join(["--exclude='{}'".format(p) for p in args.exclude])
     args.resource = settings['resource'] = BytesIO(
         bytes('tar czh {exclude} -C "{parent_path}" "{path}"'.format(
