@@ -6,7 +6,7 @@ import logging
 
 log = logging.getLogger('curlbomb.put')
 
-def prepare(args, settings):
+def prepare(args, settings, parser):
     path = glob.glob(args.source[0])[0]
     parent_path, path = os.path.split(os.path.abspath(path))
     exclude_args = " ".join(["--exclude='{}'".format(p) for p in args.exclude])

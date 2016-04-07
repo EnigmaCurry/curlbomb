@@ -5,7 +5,7 @@ import logging
 
 log = logging.getLogger('curlbomb.get')
 
-def prepare(args, settings):
+def prepare(args, settings, parser):
     settings['client_quiet'] = True
     if args.dest is None:
         dest = os.curdir

@@ -7,7 +7,7 @@ import logging
 
 log = logging.getLogger('curlbomb.ping')
 
-def prepare(args, settings):
+def prepare(args, settings, parser):
     settings['resource'] = BytesIO(b'')
     settings['survey'] = True
     settings['receive_postbacks'] = False
@@ -29,8 +29,12 @@ def prepare(args, settings):
                 params) if len(params)>0 else ""
             )
     settings['get_curlbomb_command'] = get_ping_command
-
+    
     def get_callback(request):
+        """Callback that server runs on ping from client
+
+        request - the tornado.web.HTTPRequest from the client
+        """
         # Handle return code parameter:
         return_code = request.arguments.get('return', [b"0"])[0]
         message = request.arguments.get('message', [b""])[0].decode("utf-8")

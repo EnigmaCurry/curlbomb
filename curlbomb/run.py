@@ -4,7 +4,7 @@ import logging
 
 log = logging.getLogger('curlbomb.run')
 
-def prepare(args, settings):
+def prepare(args, settings, parser):
     settings['time_command'] = True
     settings['shell_command'] = args.command
 
@@ -12,6 +12,7 @@ def prepare(args, settings):
         args.resource = settings['stdin']
     
     if args.resource == settings['stdin'] and settings['stdin'].isatty():
+        parser.print_help()
         sys.stderr.write("\nYou must specify a file or pipe one to this command's stdin\n")
         sys.exit(1)
     if args.resource == settings['stdin'] or args.resource == '-':

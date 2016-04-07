@@ -1,8 +1,8 @@
 from .server import run_server
 from .settings import get_settings
-            
-def main():
+import logging
 
+def main():
     logging.basicConfig(level=logging.WARN)
     
     settings = get_settings()

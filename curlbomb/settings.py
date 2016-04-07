@@ -255,6 +255,6 @@ def get_settings(args=None, override_defaults={}):
         args.command = None
         args.resource = settings['stdin']
         prepare_cmd = run.prepare
-    prepare_cmd(args, settings)
+    prepare_cmd(args, settings, parser)
 
     return settings
