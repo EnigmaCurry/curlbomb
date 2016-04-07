@@ -3,7 +3,7 @@ import subprocess
 import time
 import logging
 
-getlog = logging.getLogger('curlbomb.get')
+log = logging.getLogger('curlbomb.ssh')
 
 
 class SSHRemoteForward(threading.Thread):
