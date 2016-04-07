@@ -2,7 +2,7 @@ import pypandoc
 import os
 import codecs
 import sys
-from curlbomb import argparser
+from curlbomb.argparser import argparser
 from build_manpage import build_manpage
 import re
 import pytest
