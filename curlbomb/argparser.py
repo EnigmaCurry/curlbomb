@@ -5,6 +5,7 @@ from . import run
 from . import get
 from . import put
 from . import ping
+from . import ssh_copy_id
 
 def get_version():
     import pkg_resources
@@ -72,6 +73,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
     put.add_parser(subparsers)
     get.add_parser(subparsers)
     ping.add_parser(subparsers)
+    ssh_copy_id.add_parser(subparsers)
     
     return parser
 

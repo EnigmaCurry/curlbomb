@@ -1,6 +1,7 @@
 1.3.0
  * Modular rewrite - the single .py file was getting a wee bit unwieldy
  * Adds ping subcommand
+ * Adds ssh-copy-id subcommand
 
 1.2.0
  * Adds put/get subcommands for transferring files and directories.

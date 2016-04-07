@@ -372,3 +372,10 @@ received.
 following placeholders to format ping data: {return_code} and
 {message}. {message} is replaced surrounded by quotes, so no need to
 do that again in your command.
+
+### ssh-copy-id subcommand
+
+    curlbomb ssh-copy-id IDENTITY
+	
+Copies the given OpenSSH identity file (eg. ~/.ssh/id_rsa.pub) into
+the remote ~/.ssh/authorized_keys file.

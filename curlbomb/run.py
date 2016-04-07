@@ -25,10 +25,11 @@ def prepare(args, settings, parser):
         parser.print_help()
         sys.stderr.write("\nYou must specify a file or pipe one to this command's stdin\n")
         sys.exit(1)
-    if args.resource == settings['stdin'] or args.resource == '-':
-        settings['resource'] = BytesIO(settings['stdin'].buffer.read())
-    else:
-        settings['resource'] = open(args.resource, 'br')
+    if settings.get('resource', None) is None:
+        if args.resource == settings['stdin'] or args.resource == '-':
+            settings['resource'] = BytesIO(settings['stdin'].buffer.read())
+        else:
+            settings['resource'] = open(args.resource, 'br')
 
     #Detect if the input has a shebang so we can detect the shell command to display    
     if args.command is None:
