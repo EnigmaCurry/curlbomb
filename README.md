@@ -146,8 +146,9 @@ By default, curlbomb constructs URLs with the IP address of the local
 machine. This usually means that clients on another network will be
 unable to retrieve anything from curlbomb, unless you have a port
 opened up through your firewall (and appropriate use of the `--domain`
-argument.) As an alternative, curlbomb can be tunneled through SSH to
-another host that has the proper port open. For instance:
+and `--port` arguments.) As an alternative, curlbomb can be tunneled
+through SSH to another host that has the proper port open. For
+instance:
 
     echo "apt-get install salt-minion" | curlbomb --ssh user@example.com:8080
 	
@@ -193,7 +194,7 @@ By now the curlbomb command might be getting quite long. Once you've
 encrypted and stored your SSL certificate, and setup your SSH server,
 create an alias for ease of use, for example:
 
-    alias curlbomb_public=curlbomb --ssl ~/.curlbomb/curlbomb.pem --ssh user@example.com:22:8080
+    alias cb=curlbomb --ssl ~/.curlbomb/curlbomb.pem.gpg --ssh user@example.com:22:8080
 
 There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 
@@ -204,13 +205,17 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
                     [--unwrapped] [--disable-postback] [--client-logging]
                     [--client-quiet] [--mime-type MIME_TYPE] [--disable-knock]
                     [--version]
-                    {run,put,get} ...
+                    {run,put,get,ping,ssh-copy-id} ...
 				   
 curlbomb has a few subcommands:
 
  * `run` - run a shell script
  * `put` - copy local files/directories to remote system
  * `get` - copy remote files/directories to local system
+ * `ping` - wait for a client to finish a task, with optional
+   notification command
+ * `ssh-copy-id` - copy SSH public keys to the remote authorized_keys
+   file
  
 If no subcommand is specified, and there is data being piped to stdin,
 then the `run` subcommand is used implicitly.
