@@ -293,6 +293,7 @@ class CurlbombTestBase(unittest.TestCase):
 
         # Ping with corrent knock
         client_out, client_err = self.run_client(client_cmd)
+        cb.join()
         self.assertEquals(cb.returncode, 0)
 
     def test_multi_ping_return(self):
