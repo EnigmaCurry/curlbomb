@@ -7,6 +7,34 @@ import logging
 
 log = logging.getLogger('curlbomb.ping')
 
+def add_parser(subparsers):
+    ping_parser = subparsers.add_parser(
+        'ping', help="Waits for client(s) to make a request, containing optional "
+        "message and return parameters. Returns 0 or the last non-zero return "
+        "parameter received from client(s).")
+
+    def return_code(x):
+        x = int(x)
+        if x<0 or x>255:
+            raise ValueError("valid range is 0-255")
+        return x
+
+    ping_parser.add_argument('-m', '--message',
+                             help="Adds message parameter to ping request")
+    ping_parser.add_argument('-r', '--return', dest='return_code',
+                             type=return_code,
+                             help="Adds return parameter to ping request")
+    ping_parser.add_argument(
+        '--return-success', action='store_true',
+        help="Always return 0 regardless of the 'return' parameter the "
+        "client(s) sends back")
+    ping_parser.add_argument('-c','--command', help="Command to run on ping. "
+                             "string formatters include: {return_code}, {message} "
+                             "(don't use quotes around them)")
+    ping_parser.add_argument('-n', '--notify', action="store_true",
+                             help="Notify of ping via libnotify (python-notify2 package)")
+    ping_parser.set_defaults(prepare_command=prepare)
+
 def prepare(args, settings, parser):
     settings['resource'] = BytesIO(b'')
     settings['survey'] = True

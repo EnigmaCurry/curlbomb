@@ -6,12 +6,6 @@ from . import get
 from . import put
 from . import ping
 
-def return_code(x):
-    x = int(x)
-    if x<0 or x>255:
-        raise ValueError("valid range is 0-255")
-    return x
-
 def get_version():
     import pkg_resources
     try:
@@ -73,55 +67,11 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         help="Don't require authentication (no X-knock header)")
     parser.add_argument('--version', action="version", version=get_version())
 
-    run_parser = subparsers.add_parser('run', help="Run a local script on the client")
-    run_parser.add_argument('-c', '--command', metavar="COMMAND",
-                            help="The the shell command to curlbomb into "
-                            "(default is to detect #!interpreter ie. the shebang)",
-                            default=None)
-    run_parser.add_argument('resource', metavar="SCRIPT", nargs='?', default=sys.stdin)
-    run_parser.set_defaults(prepare_command=run.prepare)
     
-    put_parser = subparsers.add_parser(
-        'put', help='Copy local files or directories to the client')
-    put_parser.add_argument('source', metavar="SOURCE", nargs=1,
-                            help="Local path to copy (or put glob in quotes)")
-    put_parser.add_argument('dest', metavar="DEST", nargs='?',
-                            help="Remote directory to copy to")
-    put_parser.add_argument('--exclude', metavar="PATTERN", action='append',
-                            help="Exclude files matching PATTERN, "
-                            "a glob(3)-style wildcard pattern", default=[])
-    put_parser.set_defaults(prepare_command=put.prepare)
-
-    get_parser = subparsers.add_parser(
-        'get', help='Copy remote files or directories to the server')
-    get_parser.add_argument('source', metavar="SOURCE", nargs=1,
-                            help="Remote path to copy (or put glob in quotes)")
-    get_parser.add_argument('dest', metavar="DEST", nargs='?',
-                            help="Local directory to copy to")
-    get_parser.add_argument('--exclude', metavar="PATTERN", action='append',
-                            help="Exclude files matching PATTERN, "
-                            "a glob(3)-style wildcard pattern", default=[])
-    get_parser.set_defaults(prepare_command=get.prepare)
-
-    ping_parser = subparsers.add_parser(
-        'ping', help="Waits for client(s) to make a request, containing optional "
-        "message and return parameters. Returns 0 or the last non-zero return "
-        "parameter received from client(s).")
-    ping_parser.add_argument('-m', '--message',
-                             help="Adds message parameter to ping request")
-    ping_parser.add_argument('-r', '--return', dest='return_code',
-                             type=return_code,
-                             help="Adds return parameter to ping request")
-    ping_parser.add_argument(
-        '--return-success', action='store_true',
-        help="Always return 0 regardless of the 'return' parameter the "
-        "client(s) sends back")
-    ping_parser.add_argument('-c','--command', help="Command to run on ping. "
-                             "string formatters include: {return_code}, {message} "
-                             "(don't use quotes around them)")
-    ping_parser.add_argument('-n', '--notify', action="store_true",
-                             help="Notify of ping via libnotify (python-notify2 package)")
-    ping_parser.set_defaults(prepare_command=ping.prepare)
+    run.add_parser(subparsers)
+    put.add_parser(subparsers)
+    get.add_parser(subparsers)
+    ping.add_parser(subparsers)
     
     return parser
 

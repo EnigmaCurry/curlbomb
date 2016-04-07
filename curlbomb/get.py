@@ -5,6 +5,19 @@ import logging
 
 log = logging.getLogger('curlbomb.get')
 
+def add_parser(subparsers):
+    get_parser = subparsers.add_parser(
+        'get', help='Copy remote files or directories to the server')
+    get_parser.add_argument('source', metavar="SOURCE", nargs=1,
+                            help="Remote path to copy (or put glob in quotes)")
+    get_parser.add_argument('dest', metavar="DEST", nargs='?',
+                            help="Local directory to copy to")
+    get_parser.add_argument('--exclude', metavar="PATTERN", action='append',
+                            help="Exclude files matching PATTERN, "
+                            "a glob(3)-style wildcard pattern", default=[])
+    get_parser.set_defaults(prepare_command=prepare)
+
+
 def prepare(args, settings, parser):
     settings['client_quiet'] = True
     if args.dest is None:

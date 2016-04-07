@@ -4,6 +4,16 @@ import logging
 
 log = logging.getLogger('curlbomb.run')
 
+def add_parser(subparsers):
+    run_parser = subparsers.add_parser('run', help="Run a local script on the client")
+    run_parser.add_argument('-c', '--command', metavar="COMMAND",
+                            help="The the shell command to curlbomb into "
+                            "(default is to detect #!interpreter ie. the shebang)",
+                            default=None)
+    run_parser.add_argument('resource', metavar="SCRIPT", nargs='?', default=sys.stdin)
+    run_parser.set_defaults(prepare_command=prepare)
+
+
 def prepare(args, settings, parser):
     settings['time_command'] = True
     settings['shell_command'] = args.command
