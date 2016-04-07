@@ -26,9 +26,12 @@ fi
 
 # Don't add the key if it's already there:
 if ! grep -q "$SSH_PUBKEY" $AUTH_FILE; then
-    # Detect if file does not end in a newline, adds one if necessary:
-    if [[ $(tail -n 1 "$AUTH_FILE" | wc --lines > /dev/null) -lt 1 ]]; then 
-        echo "" >> $AUTH_FILE
+    # Detect if the file is blank:
+    if [[ $(cat $AUTH_FILE | wc -c) -gt 1 ]]; then
+        # Detect if file does not end in a newline, adds one if necessary:
+        if [[ $(tail -n 1 "$AUTH_FILE" | wc --lines) -lt 1 ]]; then 
+            echo "" >> $AUTH_FILE
+        fi
     fi
     echo "$SSH_PUBKEY" >> $AUTH_FILE
 fi

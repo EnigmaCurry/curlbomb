@@ -379,3 +379,19 @@ do that again in your command.
 	
 Copies the given OpenSSH identity file (eg. ~/.ssh/id_rsa.pub) into
 the remote ~/.ssh/authorized_keys file.
+
+Of course OpenSSH comes with it's own ssh-copy-id program, but I've
+never really understood the usefulness of it. The idea of using SSH
+keys is to not use crappy passwords, right? But the OpenSSH version of
+ssh-copy-id requires password authentication (at least temporarily
+during the setup process.) So you either have to edit your
+sshd_config, turn on `PasswordAuthentication`, and restart the
+service, or you resign yourself to run an insecure sshd all the
+time. `curlbomb ssh-copy-id` is easier and works in more situations.
+
+Another difference in this version is that you must explicity specify
+the identity file, whereas the OpenSSH version does some automatic
+determination of which key to install. Especially if you maintain
+several ssh identities, being explicit seems the more sane thing to do
+than try to save some keystrokes and inevitably install the wrong key
+on the server.
