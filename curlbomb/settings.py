@@ -131,7 +131,7 @@ def get_settings(args=None, override_defaults={}):
         # Mime type to serve resource as:
         'mime_type': args.mime_type,
         # Client should send it's hostname in the request header:
-        'require_hostname_header': True,
+        'require_hostname_header': False,
         # Log client stdout to server stdout:
         'log_post_backs': args.log_post_backs,
         # Enable TLS
