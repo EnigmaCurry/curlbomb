@@ -105,7 +105,7 @@ def get_curlbomb_command(settings, unwrapped=None):
               ssl="s" if settings['ssl'] is not None else "",
               host=settings['display_host'],
               port=settings['display_port'],
-              knock="KNOCK='{}' ".format(
+              knock="KNOCK={} ".format(
                   settings['knock']) if settings['require_knock'] else ''
         )
 
