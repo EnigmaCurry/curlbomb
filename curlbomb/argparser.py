@@ -67,6 +67,8 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         default="text/plain")
     parser.add_argument('--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
+    parser.add_argument('--knock', help="Use a specific knock rather than random",
+                        default=None)
     parser.add_argument('--version', action="version", version=get_version())
 
     

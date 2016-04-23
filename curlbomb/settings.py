@@ -141,7 +141,7 @@ def get_settings(args=None, override_defaults={}):
         # Require X-knock header:
         'require_knock': not args.disable_knock,
         # The current knock:
-        'knock': None,
+        'knock': args.knock,
         # Server verbose flag
         'verbose': args.verbose,
         # Print curl command without shell_command
@@ -180,7 +180,7 @@ def get_settings(args=None, override_defaults={}):
         settings['log_post_backs'] = True
         logging.getLogger('tornado.access').setLevel(level=logging.INFO)
         
-    if settings['require_knock']:
+    if settings['require_knock'] and not settings['knock']:
         settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
                                              altchars=b'_.').decode("utf-8")
 
