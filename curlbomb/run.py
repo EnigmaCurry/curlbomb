@@ -2,6 +2,8 @@ import sys
 from io import BytesIO
 import logging
 
+from .gpg import decrypt_resource_if_necessary
+
 log = logging.getLogger('curlbomb.run')
 
 def add_parser(subparsers):
@@ -31,6 +33,8 @@ def prepare(args, settings, parser):
         else:
             settings['resource'] = open(args.resource, 'br')
 
+    settings['resource'] = decrypt_resource_if_necessary(settings['resource'])
+            
     #Detect if the input has a shebang so we can detect the shell command to display    
     if args.command is None:
         line = settings['resource'].readline(500)
