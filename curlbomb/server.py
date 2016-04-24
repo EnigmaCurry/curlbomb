@@ -108,7 +108,7 @@ class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
                 self.request.remote_ip))
             raise tornado.web.HTTPError(405, 'Client is not allowed to GET anymore')
         self.finish()
-        if self._state['num_gets'] < self._allowed_gets:
+        if self._state['num_gets'] < self._allowed_gets or self._allowed_gets == 0:
             self._resource.seek(0)
         if self._get_callback is not None:
             self._get_callback(self.request)
@@ -141,7 +141,7 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
         if not self._allow_post_backs:
             raise tornado.web.HTTPError(405, 'This server is not configured to allow data upload')
         if (self._state['num_posts'] +
-            self._state['num_posts_in_progress']) >= self._allowed_gets:
+            self._state['num_posts_in_progress']) >= self._allowed_gets and self._allowed_gets != 0:
             raise tornado.web.HTTPError(403, 'Maximum number of posts reached')
         self._state['num_posts_in_progress'] += 1
                 
