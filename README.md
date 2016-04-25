@@ -2,25 +2,45 @@
 
 curlbomb is an HTTP(s) server for serving one-time-use shell scripts.
 
-You know all those docs for cool dev tools that start out by telling
-you to install their software in one line, like this?
+You know all those docs for the cool and hip software projects that
+start out by telling you to install their software in one line, like
+this?
 
-    bash <(curl -s http://example.com/install.sh)
+    bash <(curl http://example.com/install.sh)
 
 I call that a curl bomb... I don't know if anyone else does.
 
-curlbomb serves a single file (read from disk or stdin) via HTTP to
-the first client to request it, then shuts down. A command is printed
-out that will construct the curl bomb the client needs to run, which
-includes a one-time-use passphrase (called a knock) that is required
-to download the resource. This command is copy/pasted (or typed) into
-another shell, on some other computer, which will download and run the
-script in one line.
+*convenient* as hell, but a security and trustability
+*nightmare*. Especially since installers usually require root access,
+do you trust a random file on the internet with direct access to your
+machine?
 
-curlbomb has optional integration with OpenSSL to secure
-communications. OpenSSH is supported as well, to make it easy to
-curlbomb from anywhere on the internet, to anywhere else, through a
+But I usually try to ask myself this question: is it possible to turn
+a *bad* idea into a *good* one, or at the very least a less-bad idea?
+Let's take a look..
+
+curlbomb serves a single file (read from disk or stdin) via HTTP to
+the first client to request it, then it shuts down. A command is
+printed out that will construct the curl bomb the client needs to run,
+which includes a one-time-use passphrase (called a knock) that is
+required to download the resource. This command is copy/pasted (or
+typed) into another shell, on some other computer, which will download
+and run the script in one line.
+
+curlbomb has optional (but recommended) integration with OpenSSL to
+secure communications. OpenSSH is supported as well, to make it easy
+to curlbomb from anywhere on the internet, to anywhere else, through a
 proxy server that you can forward the port through.
+
+So does curlbomb measure up to making this a good idea? Decide for yourself:
+
+| Feature/Problem | Traditional curl bomb                                                                                             | Using curlbomb                                                                                                                                                       |
+| -------         | ---------------------                                                                                             | -------                                                                                                                                                              |
+| Conveniece      | Yup, sure is.                                                                                                     | I think so.                                                                                                                                                          |
+| Trust           | Is it even SSL? Do you know/trust the URL and it's author?                                                        | Self hosted server and SSL verifies connection                                                                                                                       |
+| Security        | Even if you verify the script beforehand, are you sure it hasn't changed?                                         | Self hosted script, you're in control of the contents.                                                                                                               |
+| Privacy         | Anyone who knows the URL can download/run. Cannot contain private information like passwords.                     | curlbomb requires a passphrase (knock) and only serves a file one time (by default.) Put sensitive data like SSH keys and passphrases into your script as necessary. |
+| Repeatability   | Is the script going to stay at the same URL forever? Can you specify any parameters or at least a version number? | It's your script, read whatever env vars you want. You can keep it checked into your own git repository and serve if from anywhere anytime.                          |
 
 curlbomb is well tested, but not intended for heavy automation
 work. There are better alternatives to choose from (saltstack,
