@@ -15,11 +15,18 @@ if pytest.main(args=[os.path.abspath("tests.py"), '-v']) != 0:
 with open('README.txt','w+') as rst_file:
     with codecs.open('README.md', mode='r', encoding='utf-8') as markdown_file:
         readme = markdown_file.read()
-        
-    rst_file.write(pypandoc.convert(readme,'rst', format='markdown'))
+        # Make rst format that pypi uses:
+        rst_file.write(pypandoc.convert(readme,'rst', format='markdown'))
 
 ### Build manpage
 readme = re.sub(r'^### (.*)', r'`\1`', readme, flags=re.MULTILINE)
+
+# Pull out the feature table and reformat it for better text viewing:
+table_re = "^\[comment\]: \# \(start feature table\)(.*)\[comment\]: \# \(end feature table\)"
+feature_table = re.search(table_re, readme, re.MULTILINE | re.DOTALL).groups()[0]
+feature_table = pypandoc.convert(feature_table, 'rst', format="markdown")
+readme = re.sub(table_re, feature_table, readme, flags=re.MULTILINE | re.DOTALL)
+
 parts = re.split("^##? .*", readme, flags=re.MULTILINE)
 long_description = parts[1]
 installation = parts[2]
