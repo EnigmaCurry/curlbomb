@@ -72,7 +72,7 @@ Serve a script stored in a file:
 This outputs a curl command that you copy and paste into a shell on another
 computer:
 
-    KNOCK='nDnXXp8jkZKtbush' bash <(curl -LSs http://192.0.2.100:48690)
+    KNOCK=nDnXXp8jkZKtbush bash <(curl -LSs http://192.0.2.100:48690)
 	
 Once pasted, the script is automatically downloaded and executed.
 
