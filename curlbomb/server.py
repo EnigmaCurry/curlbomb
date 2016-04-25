@@ -220,6 +220,8 @@ def run_server(settings):
     ## Start SSH tunnel if requested:
     httpd.ssh_conn = None
     if settings['ssh']:
+        if settings['ssl'] is None:
+            log.warn("Using --ssh without --ssl is probably not a great idea")
         httpd.ssh_conn = SSHRemoteForward(
             settings['ssh_host'], settings['ssh_forward'], settings['ssh_port'])
         httpd.ssh_conn.start()
