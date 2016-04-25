@@ -34,6 +34,7 @@ proxy server that you can forward the port through.
 
 So does curlbomb measure up to making this a good idea? Decide for yourself:
 
+[comment]: # (start feature table)
 | Feature/Problem | Traditional curl bomb                                                                                             | Using curlbomb                                                                                                                                                       |
 | -------         | ---------------------                                                                                             | -------                                                                                                                                                              |
 | Conveniece      | Yup, sure is.                                                                                                     | I think so.                                                                                                                                                          |
@@ -41,6 +42,7 @@ So does curlbomb measure up to making this a good idea? Decide for yourself:
 | Security        | Even if you verify the script beforehand, are you sure it hasn't changed?                                         | Self hosted script, you're in control of the contents.                                                                                                               |
 | Privacy         | Anyone who knows the URL can download/run. Cannot contain private information like passwords.                     | curlbomb requires a passphrase (knock) and only serves a file one time (by default.) Put sensitive data like SSH keys and passphrases into your script as necessary. |
 | Repeatability   | Is the script going to stay at the same URL forever? Can you specify any parameters or at least a version number? | It's your script, read whatever env vars you want. You can keep it checked into your own git repository and serve if from anywhere anytime.                          |
+[comment]: # (end feature table)
 
 curlbomb is well tested, but not intended for heavy automation
 work. There are better alternatives to choose from (saltstack,
