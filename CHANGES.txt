@@ -2,6 +2,11 @@
  * Modular rewrite - the single .py file was getting a wee bit unwieldy
  * Adds ping subcommand
  * Adds ssh-copy-id subcommand
+ * Adds support for loading GPG encrypted scripts into the server
+ * Adds ability to specify your own knock parameter with --knock
+ * Fixes '-n 0' to serve a script an unlimited number of times
+ * Adds -1 paramater as a one-shot curlbomb that does not wait for client output
+ * Removes the -k option to have no knock. It was a bad idea to use a short option for that and it had a counter-intuitive mnemonic. Use --disable-knock now, or even better, use the --knock parameter and specify an easy-to-remember knock.
 
 1.2.0
  * Adds put/get subcommands for transferring files and directories.
