@@ -28,7 +28,9 @@ class SSHRemoteForward(threading.Thread):
             if line == b'':
                 self._kill = True
                 break
-            elif line.startswith(b"Authenticated to"):
+            elif b'remote port forwarding failed' in line:
+                self._kill = True
+            elif b"All remote forwarding requests processed" in line:
                 self._connected = True
                 break
         while True:

@@ -4,10 +4,12 @@ import logging
 import ssl
 import tempfile
 import subprocess
+import _thread
 
 import tornado.web
 import tornado.ioloop
 import tornado.gen
+import requests
 
 from .ssh import SSHRemoteForward
 
@@ -247,7 +249,21 @@ def run_server(settings):
             sys.stderr.write("\n")
         else:
             sys.stderr.write("{}\n".format(cmd))
-            
+
+    if settings['ssh'] and not settings['args'].domain:
+        "Check the SSH forward works"
+        def check_port_forward(timeout=5):
+            try:
+                url = "http{ssl}://{host}:{port}".format(
+                    ssl="s" if settings['ssl'] is not None else "",
+                    host=settings['display_host'],
+                    port=settings['display_port'])
+                log.info("Testing port forward is functioning properly - {}".format(url))
+                r = requests.head(url, timeout=timeout)
+            except (requests.ConnectionError, requests.exceptions.ReadTimeout):
+                log.warn("Could not contact server throuh SSH forward. You may need to check your sshd_config and enable 'GatwayPorts clientspecified'")
+        _thread.start_new_thread(check_port_forward, ())
+
     try:
         tornado.ioloop.IOLoop.current().start()
     except KeyboardInterrupt:

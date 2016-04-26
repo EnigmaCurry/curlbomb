@@ -123,6 +123,8 @@ def get_settings(args=None, override_defaults={}):
     args = parser.parse_args(args)
         
     settings = {
+        # Store args object:
+        'args': args,
         # Instruct client to post stdout back to the server:
         'receive_postbacks': True,
         # Run client script with this shell interpreter:
