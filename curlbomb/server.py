@@ -91,6 +91,10 @@ class CurlbombResourceWrapperRequestHandler(tornado.web.RequestHandler):
         self.set_status(200)
         self.write(self.__curlbomb_command)
         self.finish()
+
+    def head(self):
+        """Allow head requests, does not count towards num_gets and does not require a knock"""
+        pass
                 
 class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
     """Serve a file like resource a limited number of times.
@@ -113,6 +117,11 @@ class CurlbombResourceRequestHandler(CurlbombBaseRequestHandler):
         if self._get_callback is not None:
             self._get_callback(self.request)
         self.shutdown_if_ready()
+
+    def head(self):
+        """Allow head requests, does not count towards num_gets and does not require a knock"""
+        pass
+
 
 @tornado.web.stream_request_body
 class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
