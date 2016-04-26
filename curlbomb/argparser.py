@@ -1,5 +1,6 @@
 import sys
 import argparse
+import os
 
 from . import run
 from . import get
@@ -7,15 +8,16 @@ from . import put
 from . import ping
 from . import ssh_copy_id
 
-def get_version():
+def get_version(include_path=False):
     import pkg_resources
+    path = os.path.split(__file__)[0]
     try:
         pkg = pkg_resources.get_distribution('curlbomb')
     except pkg_resources.DistributionNotFound:
-        return 'DEV'
+        return 'DEV' + ( " - {}".format(path) if include_path else "")
     if __file__.startswith(pkg.location):
-        return pkg.version
-    return 'DEV'
+        return pkg.version + ( " - {}".format(path) if include_path else "")
+    return 'DEV' + ( " - {}".format(path) if include_path else "")
 
 def argparser(formatter_class=argparse.HelpFormatter):
     parser = argparse.ArgumentParser(
@@ -69,7 +71,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         help="Don't require authentication (no X-knock header)")
     parser.add_argument('--knock', help="Use a specific knock rather than random",
                         default=None)
-    parser.add_argument('--version', action="version", version=get_version())
+    parser.add_argument('--version', action="version", version=get_version(True))
 
     
     run.add_parser(subparsers)
