@@ -63,6 +63,15 @@ Or from the
 
     pip install curlbomb
 
+### Dependencies
+
+ * Python 3.5 (I haven't tested anything lower)
+ * [Tornado](http://www.tornadoweb.org/)
+ * OpenSSL (optional, if using --ssl)
+ * OpenSSH (optional, if using --ssh)
+ * GnuPG (optional, if using encrypted SSL cert or resources)
+ * [python-notify2](https://pypi.python.org/pypi/notify2) (optional, for desktop notifications when using ping subcommand)
+ 
 ## Example Use
 
 Serve a script stored in a file:
