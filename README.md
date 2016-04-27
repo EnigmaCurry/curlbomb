@@ -214,13 +214,13 @@ You can also specify `--ssl` by itself, without the path. In this
 case, a new self-signed certificate will be generated and used for
 this session only.
 
-`--pin` can be used to directly provide the SSL certificate
-fingerprint to the client curl command. This avoids having to trust
-the client's CA root certificate store, and trusts your certificate
-explicitly. When generating a self-signed certificate with `--ssl`,
-the `--pin` option is turned on automatically. This makes the client
-command you have to paste/type much longer than it usually is, for
-example:
+`--pin` can be used to extract the SSL certificate fingerprint and
+directly provide it to the client curl command. This avoids having to
+trust the client's CA root certificate store, and trusts your
+certificate explicitly. When generating a self-signed certificate with
+`--ssl`, the `--pin` option is turned on automatically. This makes the
+client command you have to paste/type much longer than it usually is,
+for example:
 
     $ echo "whoami" | curlbomb --ssl
     WARNING:curlbomb.server:No SSL certificate provided, creating a new self-signed certificate for this session
