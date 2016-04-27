@@ -218,9 +218,9 @@ this session only.
 directly provide it to the client curl command. This avoids having to
 trust the client's CA root certificate store, and trusts your
 certificate explicitly. When generating a self-signed certificate with
-`--ssl`, the `--pin` option is turned on automatically. This makes the
-client command you have to paste/type much longer than it usually is,
-for example:
+`--ssl`, the `--pin` option is turned on automatically. Pinning adds
+some extra security benefits, but makes the client command you have to
+paste/type much longer than it usually is, for example:
 
     $ echo "whoami" | curlbomb --ssl
     WARNING:curlbomb.server:No SSL certificate provided, creating a new self-signed certificate for this session
