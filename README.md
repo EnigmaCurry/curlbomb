@@ -71,6 +71,7 @@ Or from the
  * OpenSSH (optional, if using --ssh)
  * GnuPG (optional, if using encrypted SSL cert or resources)
  * [python-notify2](https://pypi.python.org/pypi/notify2) (optional, for desktop notifications when using ping subcommand)
+ * curl (on the client machine, preferably version >= 7.39.0, for --pinnedpubkey support)
  
 ## Example Use
 
@@ -224,12 +225,13 @@ case, a new self-signed certificate will be generated and used for
 this session only.
 
 `--pin` can be used to extract the SSL certificate fingerprint and
-directly provide it to the client curl command. This avoids having to
-trust the client's CA root certificate store, and trusts your
-certificate explicitly. When generating a self-signed certificate with
-`--ssl`, the `--pin` option is turned on automatically. Pinning adds
-some extra security benefits, but makes the client command you have to
-paste/type much longer than it usually is, for example:
+directly provide it to the client curl command (requires curl
+>=7.39). This avoids having to trust the client's CA root certificate
+store, and trusts your certificate explicitly. When generating a
+self-signed certificate with `--ssl`, the `--pin` option is turned on
+automatically. Pinning adds some extra security benefits, but makes
+the client command you have to paste/type much longer than it usually
+is, for example:
 
     $ echo "whoami" | curlbomb --ssl
     WARNING:curlbomb.server:No SSL certificate provided, creating a new self-signed certificate for this session
@@ -323,12 +325,13 @@ certificate path is provided, a temporary self-signed certificate will
 be generated for the current curlbomb session and `--pin` will be
 turned on implicitly.
 
-`--pin` Pin the SSL certificate fingerprint into the client curl
-command. This is used to bypass the root CA store of the client
-machine, and to tell it exactly what the server's SSL certificate
-looks like. This is useful for mitigating man-in-the-middle attacks,
-as well as when using self-signed certificates. This makes the client
-command quite a bit longer than usual.
+`--pin` (requires curl>=7.39.0) Pin the SSL certificate fingerprint
+into the client curl command. This is used to bypass the root CA store
+of the client machine, and to tell it exactly what the server's SSL
+certificate looks like. This is useful for mitigating
+man-in-the-middle attacks, as well as when using self-signed
+certificates. This makes the client command quite a bit longer than
+usual.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
 shell command. Useful for testing script retrieval without running
