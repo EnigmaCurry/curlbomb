@@ -1,6 +1,6 @@
 # curlbomb 
 
-curlbomb is an HTTP(s) server for serving one-time-use shell scripts.
+curlbomb is a personal HTTP(s) server for serving one-time-use shell scripts.
 
 You know all those docs for the cool and hip software projects that
 start out by telling you to install their software in one line, like
