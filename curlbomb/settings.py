@@ -278,7 +278,6 @@ def get_settings(args=None, override_defaults={}):
 
     if settings['ssl'] is not False:
         settings['ssl_context'] = tls.get_ssl_context_from_settings(settings)
-        log.error("ssl context is: {}".format(settings['ssl_context']))
             
     if not settings['stdout'].isatty() and not settings['quiet']:
         # Imply we want log-posts if we pipe to a non-tty:
