@@ -50,7 +50,7 @@ def prepare(args, settings, parser):
             params['return'] = args.return_code
         
         return "curl -LSs 'http{ssl}://{host}:{port}/r{query_params}'".format(
-            ssl="s" if settings['ssl'] is not None else "",
+            ssl="s" if settings['ssl'] is not False else "",
             host=settings['display_host'],
             port=settings['display_port'],
             query_params="?"+urllib.parse.urlencode(

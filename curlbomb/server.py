@@ -1,10 +1,11 @@
 import sys
 import time
 import logging
-import ssl
 import tempfile
 import subprocess
 import _thread
+import hashlib
+import base64
 
 import tornado.web
 import tornado.ioloop
@@ -12,6 +13,7 @@ import tornado.gen
 import requests
 
 from .ssh import SSHRemoteForward
+from . import tls
 
 log = logging.getLogger('curlbomb.server')
 
@@ -176,6 +178,23 @@ def run_server(settings):
         get_callback=settings.get('get_callback', None)
     )
 
+    if settings['ssl'] is not False:
+        if settings['ssl'] is None:
+            # Create self-signed certificate for one use:
+            log.warn("No SSL certificate provided, creating a new self-signed certificate for this session")
+            cert = tls.create_self_signed_cert()
+            # Always pin the certificate if we are using self-signed cert:
+            settings['pin'] = True
+        else:
+            # Use pre-generated certificate file:
+            with open(settings['ssl'], 'br') as cert_file:
+                cert = tls.decrypt_cert_if_necessary(cert_file.read())
+        ssl_ctx = tls.create_ssl_ctx(cert)
+        settings['ssl_hash'] = tls.get_pinned_cert_hash(cert)
+        log.info("SSL certificate loaded")
+    else:
+        ssl_ctx = None
+    
     unwrapped_script = settings['get_curlbomb_command'](settings, unwrapped=True)
     if not settings['client_quiet'] and settings['time_command']:
         unwrapped_script = "time "+unwrapped_script
@@ -189,49 +208,12 @@ def run_server(settings):
         ], default_handler_class=ErrorRequestHandler
     )
     
-    ## Load SSL certificate if specified:
-    if settings['ssl'] is not None:
-        with open(settings['ssl'], 'br') as cert_file:
-            cert = cert_file.read()
-            if cert.startswith(b'-----BEGIN PGP MESSAGE-----'):
-                # Decrypt PGP encrypted certfile:
-                log.info("Attempting SSL certificate decryption")
-                with subprocess.Popen(
-                        ['gpg','-d'], stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
-                    p.stdin.write(cert)
-                    decrypted_cert, stderr = p.communicate()
-                    # Log gpg info which includes identity used to decrypt cert:
-                    log.info(stderr.decode("utf-8"))
-                    if p.returncode != 0:
-                        log.error("Could not load encrypted certificate")
-                        sys.exit(1)
-                    # Create temporary file to store decrypted cert.
-                    # This isn't the most secure method I can think of,
-                    # but I can't see another way as the low-level openssl
-                    # api requires a file and will not accept a string
-                    # or file like object.
-                    with tempfile.NamedTemporaryFile('wb') as temp_cert:
-                        temp_cert.write(decrypted_cert)
-                        del decrypted_cert
-                        # SSL with decrypted cert:
-                        ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-                        ssl_ctx.load_cert_chain(temp_cert.name)
-                        httpd = app.listen(settings['port'],
-                                           ssl_options=ssl_ctx)
-            else:
-                # SSL with plain text cert:
-                httpd = app.listen(settings['port'],
-                                   ssl_options=dict(certfile=settings['ssl']))
-            log.info("SSL certificate loaded")
-    else:
-        # No SSL
-        httpd = app.listen(settings['port'], max_buffer_size=1024E9)
+    httpd = app.listen(settings['port'], ssl_options=ssl_ctx, max_buffer_size=1024E9)
 
     ## Start SSH tunnel if requested:
     httpd.ssh_conn = None
     if settings['ssh']:
-        if settings['ssl'] is None:
+        if settings['ssl'] is False:
             log.warn("Using --ssh without --ssl is probably not a great idea")
         httpd.ssh_conn = SSHRemoteForward(
             settings['ssh_host'], settings['ssh_forward'], settings['ssh_port'])
@@ -255,7 +237,7 @@ def run_server(settings):
         def check_port_forward(timeout=5):
             try:
                 url = "http{ssl}://{host}:{port}".format(
-                    ssl="s" if settings['ssl'] is not None else "",
+                    ssl="s" if settings['ssl'] is not False else "",
                     host=settings['display_host'],
                     port=settings['display_port'])
                 log.info("Testing port forward is functioning properly - {}".format(url))

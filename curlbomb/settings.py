@@ -20,6 +20,12 @@ def get_curlbomb_command(settings, unwrapped=None):
     Alternatively, you can pass unwrapped=True to force getting the
     unwrapped script.
     """
+    # Pin tls cert to client command if we are using curl, --ssl, and --pin
+    pin_settings=""
+    if settings['http_fetcher'].startswith("curl") and \
+       settings['ssl'] is not False and settings['pin'] is True:
+        pin_settings = " -k --pinnedpubkey 'sha256//{}'".format(settings['ssl_hash'])
+
     if (settings['unwrapped'] and unwrapped is not False) or unwrapped is True:
         # Get the full unwrapped command:
         knock = ""
@@ -46,7 +52,7 @@ def get_curlbomb_command(settings, unwrapped=None):
             logger = " | tee curlbomb.log"
 
         if settings['receive_postbacks']:
-            callback_cmd="curl -T - http{ssl}://{host}:{port}/s{knock}{hostname_header}"
+            callback_cmd="curl{pin_settings} -T - http{ssl}://{host}:{port}/s{knock}{hostname_header}"
             if settings['client_quiet']:
                 callback_cmd = " | " + callback_cmd
             else:
@@ -57,33 +63,36 @@ def get_curlbomb_command(settings, unwrapped=None):
                     'wget can\'t stream the client output like curl can though '
                     ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
             logger += callback_cmd.format(
-                    ssl="s" if settings['ssl'] is not None else "",
-                    host=settings['display_host'],
-                    port=settings['display_port'],
-                    knock=knock,
-                    hostname_header=hostname_header
+                ssl="s" if settings['ssl'] is not False else "",
+                host=settings['display_host'],
+                port=settings['display_port'],
+                knock=knock,
+                pin_settings=pin_settings,
+                hostname_header=hostname_header
                 )
 
         if settings['shell_command'] is None or settings['survey']:
-            cmd = "{http_fetcher} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
+            cmd = "{http_fetcher}{pin_settings} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
                   format(
                       http_fetcher=settings['http_fetcher'],
-                      ssl="s" if settings['ssl'] is not None else "",
+                      ssl="s" if settings['ssl'] is not False else "",
                       host=settings['display_host'],
                       port=settings['display_port'],
                       knock=knock,
                       hostname_header=hostname_header,
+                      pin_settings=pin_settings,
                       logger=logger)
         else:
-            cmd = "{shell_command} <({http_fetcher} http{ssl}://{host}:{port}/r{knock}"\
+            cmd = "{shell_command} <({http_fetcher}{pin_settings} http{ssl}://{host}:{port}/r{knock}"\
                   "{hostname_header}){logger}".format(
                       http_fetcher=settings['http_fetcher'],
                       shell_command=settings['shell_command'],
-                      ssl="s" if settings['ssl'] is not None else "",
+                      ssl="s" if settings['ssl'] is not False else "",
                       host=settings['display_host'],
                       port=settings['display_port'],
                       knock=knock,
                       hostname_header=hostname_header,
+                      pin_settings=pin_settings,
                       logger=logger)
 
         return cmd
@@ -97,17 +106,18 @@ def get_curlbomb_command(settings, unwrapped=None):
                     knock_header = ' -H "X-knock: {}"'.format(settings['knock'])
             else:
                 knock_header=''
-            cmd = "{http_fetcher} http{ssl}://{host}:{port}/r" + knock_header
+            cmd = "{http_fetcher}{pin_settings} http{ssl}://{host}:{port}/r" + knock_header
         else:
-            cmd = "{knock}bash <({http_fetcher} http{ssl}://{host}:{port})"
+            cmd = "{knock}bash <({http_fetcher}{pin_settings} http{ssl}://{host}:{port})"
 
         return cmd.format(
-              http_fetcher=settings['http_fetcher'],
-              ssl="s" if settings['ssl'] is not None else "",
-              host=settings['display_host'],
-              port=settings['display_port'],
-              knock="KNOCK={} ".format(
-                  shlex.quote(settings['knock'])) if settings['require_knock'] else ''
+            http_fetcher=settings['http_fetcher'],
+            ssl="s" if settings['ssl'] is not False else "",
+            host=settings['display_host'],
+            port=settings['display_port'],
+            pin_settings=pin_settings,
+            knock="KNOCK={} ".format(
+                shlex.quote(settings['knock'])) if settings['require_knock'] else ''
         )
 
     
@@ -139,6 +149,8 @@ def get_settings(args=None, override_defaults={}):
         'log_post_backs': args.log_post_backs,
         # Enable TLS
         'ssl': args.ssl,
+        # Enable SSL certificate pinning in client command:
+        'pin': args.pin,
         # Total number of allowed HTTP gets on resource:
         'num_gets': args.num_gets,
         # Require X-knock header:
@@ -201,12 +213,19 @@ def get_settings(args=None, override_defaults={}):
         # wrapper script that wraps the longer more complicated client
         # command. This will output this unrwapped version instead.
         settings['require_knock_from_environment'] = False
+
+    if args.pin and args.ssl is False:
+        print("--pin requires --ssl")
+        sys.exit(1)
         
     if args.wget:
         settings['http_fetcher'] = "wget -q -O -"
         if args.log_post_backs:
             print("wget can't stream the client output, so --log-posts is not "
                   "supported in wget mode")
+            sys.exit(1)
+        if args.pin:
+            print("SSL certificate pinning only works in curl mode")
             sys.exit(1)
 
     if args.port == "random":

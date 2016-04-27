@@ -10,8 +10,13 @@ def detect_encrypted_resource(resource):
     Determining factors:
      a) The resource is ascii-armored text
      b) The resource is binary data starting with 0x8502"""
-    line = resource.read(50)
-    resource.seek(0)
+    try:
+        # Read file like
+        line = resource.read(50)
+        resource.seek(0)
+    except AttributeError:
+        # Read str like
+        line = resource[:50]
     if line.startswith(b"-----BEGIN PGP"):
         return True
     elif line.startswith(b'\x85\x02'):

@@ -53,7 +53,10 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         default=None)
     parser.add_argument('--ssl', metavar="CERTIFICATE",
                         help="Use SSL with the given certificate file "
-                        "(optionally PGP encrypted)")
+                        "(optionally PGP encrypted)", nargs="?", default=False)
+    parser.add_argument('--pin', help="Pin the SSL certificate hash into the client "
+                        "command to force curl to use our certificate"
+                        " (requires --ssl)", action="store_true")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run "
                         "(just get the script, don't run it)", action="store_true")
     parser.add_argument('--unwrapped',
