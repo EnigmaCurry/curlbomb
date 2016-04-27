@@ -190,7 +190,7 @@ sshd_config of the server to allow GatewayPorts:
 
 ### TLS / SSL security
 
-For extra security, you can enable TLS with --ssl:
+For extra security, you can enable TLS with `--ssl`:
 
     echo "PASSWORD=hunter2 run_my_server" | curlbomb --ssl /path/to/cert.pem
 
@@ -203,12 +203,38 @@ modified!) through traffic analysis at your ISP or any other router
 your connection flows through. Using TLS makes sure this doesn't
 happen. 
 
-Note that when combined with the --ssh parameter, the SSL certificate
-should be generated for the host running the SSH server rather than
-the one running curlbomb. To prevent having to store the SSL
-certificate in plain text on your local machine, the file may be
-optionally PGP encrypted and curlbomb will decrypt it only when
-necessary.
+You can also specify `--ssl` by itself, without the path. In this
+case, a new self-signed certificate will be generated and used for
+this session only.
+
+`--pin` can be used to directly provide the SSL certificate
+fingerprint to the client curl command. This avoids having to trust
+the client's CA root certificate store, and trusts your certificate
+explicitly. When generating a self-signed certificate with `--ssl`,
+the `--pin` option is turned on automatically. This makes the client
+command you have to paste/type much longer than it usually is, for
+example:
+
+    $ echo "whoami" | curlbomb --ssl
+    WARNING:curlbomb.server:No SSL certificate provided, creating a new self-signed certificate for this session
+    Paste this command on the client:
+	
+      KNOCK=bbxfOV1ToDVhJjAl bash <(curl -LSs -k --pinnedpubkey 'sha256//RSkhZc2Qw/j8AxHMLUzipRpegEK9I0BlX7J1I5bcg0Y=' https://192.0.2.100:39817)
+	  
+`--pin` is a different kind of trust model then using a certificate
+signed by a CA. When you use `--pin` you are completely bypassing the
+root CA certificate store of the client machine and instructing it to
+trust your certificate explicitly. This mitigates many
+man-in-the-middle type attacks that can happen with TLS, but you still
+need to take care that the client command is not modified or
+eavesdropped before being pasted into the client.
+
+Note that when the `--ssl` parameter is combined with the `--ssh`
+parameter, the SSL certificate should be generated for the host
+running the SSH server rather than the one running curlbomb. To
+prevent having to store the SSL certificate in plain text on your
+local machine, the file may be optionally PGP encrypted and curlbomb
+will decrypt it only when necessary.
 
 ### Aliases
 
@@ -222,12 +248,12 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 
 ## Command Line Args
 
-    usage: curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
-                    [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--survey]
-                    [--unwrapped] [--disable-postback] [--client-logging]
-                    [--client-quiet] [--mime-type MIME_TYPE] [--disable-knock]
-                    [--version]
-                    {run,put,get,ping,ssh-copy-id} ...
+    curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
+             [-1] [--ssh SSH_FORWARD] [--ssl [CERTIFICATE]] [--pin]
+             [--survey] [--unwrapped] [--client-logging] [--client-quiet]
+             [--mime-type MIME_TYPE] [--disable-knock] [--knock KNOCK]
+             [--version]
+             {run,put,get,ping,ssh-copy-id} ...
 				   
 curlbomb has a few subcommands:
 
@@ -280,10 +306,20 @@ running curlbomb. The syntax for SSH_FORWARD is
 GatewayPorts setting turned on to allow remote clients to connect to
 this port. See sshd_config(5).
 
-`--ssl CERTIFICATE` Run the HTTP server with TLS encryption. Give the
-full path to your SSL certificate, optionally PGP encrypted. The file
-should contain the entire certificate chain, including the CA
-certificate, if any.
+`--ssl [CERTIFICATE]` Run the HTTP server with TLS
+encryption. Optionally provide the full path to your SSL certificate,
+which may be PGP encrypted. The file should contain the entire
+certificate chain, including the CA certificate, if any. If no SSL
+certificate path is provided, a temporary self-signed certificate will
+be generated for the current curlbomb session and `--pin` will be
+turned on implicitly.
+
+`--pin` Pin the SSL certificate fingerprint into the client curl
+command. This is used to bypass the root CA store of the client
+machine, and to tell it exactly what the server's SSL certificate
+looks like. This is useful for man-in-the-middle attack mitigation, as
+well as when using self-signed certificates. This makes the client
+command quite a bit longer than usual.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
 shell command. Useful for testing script retrieval without running
