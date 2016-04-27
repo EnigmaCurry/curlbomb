@@ -1,3 +1,13 @@
+1.3.1
+ * Adds path to curlbomb python modules in --version output.
+ * Allow HTTP HEAD requests to / and /r without increasing num_gets or
+   requiring a knock.
+ * Outputs warning message if using --ssh and the forward isn't working
+ * --ssl can be used with specifing a CERTIFICATE path, in this case
+   generating a temporary self-signed cert.
+ * Adds --pin parameter to give the client curl command the SSL fingerprint
+   bypassing the client machine's root CA.
+ 
 1.3.0
  * Modular rewrite - the single .py file was getting a wee bit unwieldy
  * Adds ping subcommand
@@ -6,7 +16,10 @@
  * Adds ability to specify your own knock parameter with --knock
  * Fixes '-n 0' to serve a script an unlimited number of times
  * Adds -1 paramater as a one-shot curlbomb that does not wait for client output
- * Removes the -k option to have no knock. It was a bad idea to use a short option for that and it had a counter-intuitive mnemonic. Use --disable-knock now, or even better, use the --knock parameter and specify an easy-to-remember knock.
+ * Removes the -k option to have no knock. It was a bad idea to use a
+   short option for that and it had a counter-intuitive mnemonic. Use
+   --disable-knock now, or even better, use the --knock parameter and
+   specify an easy-to-remember knock.
 
 1.2.0
  * Adds put/get subcommands for transferring files and directories.
@@ -15,10 +28,12 @@
    args.
 
 1.1.2
- * Removes formatting in --log-posts so that the text is exactly as the client sent it.
+ * Removes formatting in --log-posts so that the text is exactly as
+   the client sent it.
 
 1.1.1
- * Adds --domain option to specify the domain name to display in the client command
+ * Adds --domain option to specify the domain name to display in the
+   client command
 
 1.1.0
  * Complete rewrite of curlbomb using Tornado
