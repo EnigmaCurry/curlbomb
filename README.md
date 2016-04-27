@@ -67,6 +67,7 @@ Or from the
 
  * Python 3.5 (I haven't tested anything lower)
  * [Tornado](http://www.tornadoweb.org/)
+ * [Requests](https://pypi.python.org/pypi/requests)
  * OpenSSL (optional, if using --ssl)
  * OpenSSH (optional, if using --ssh)
  * GnuPG (optional, if using encrypted SSL cert or resources)
