@@ -80,3 +80,22 @@ def create_self_signed_cert():
                 stderr=subprocess.PIPE) as p:
             p.stdin.write(b"\n"*10)
         return open(temp_cert.name,'br').read()
+
+def get_ssl_context_from_settings(settings):    
+    if settings['ssl'] is not False:
+        if settings['ssl'] is None:
+            # Create self-signed certificate for one use:
+            log.warn("No SSL certificate provided, creating a new self-signed certificate for this session")
+            cert = create_self_signed_cert()
+            # Always pin the certificate if we are using self-signed cert:
+            settings['pin'] = True
+        else:
+            # Use pre-generated certificate file:
+            with open(settings['ssl'], 'br') as cert_file:
+                cert = decrypt_cert_if_necessary(cert_file.read())
+        ssl_ctx = create_ssl_ctx(cert)
+        settings['ssl_hash'] = get_pinned_cert_hash(cert)
+        log.info("SSL certificate loaded")
+    else:
+        ssl_ctx = None
+    return ssl_ctx

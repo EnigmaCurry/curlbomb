@@ -6,6 +6,7 @@ import random
 import shlex
 
 from . import run
+from . import tls
 
 log = logging.getLogger('curlbomb.settings')
 
@@ -149,8 +150,10 @@ def get_settings(args=None, override_defaults={}):
         'log_post_backs': args.log_post_backs,
         # Enable TLS
         'ssl': args.ssl,
+        # ssl context passed to server
+        'ssl_context': None,
         # Enable SSL certificate pinning in client command:
-        'pin': args.pin,
+        'pin': args.pin or args.ssl is None,
         # Total number of allowed HTTP gets on resource:
         'num_gets': args.num_gets,
         # Require X-knock header:
@@ -272,6 +275,11 @@ def get_settings(args=None, override_defaults={}):
         if len(parts) > 1:
             settings['display_port'] = parts[1]
 
+
+    if settings['ssl'] is not False:
+        settings['ssl_context'] = tls.get_ssl_context_from_settings(settings)
+        log.error("ssl context is: {}".format(settings['ssl_context']))
+            
     if not settings['stdout'].isatty() and not settings['quiet']:
         # Imply we want log-posts if we pipe to a non-tty:
         settings['log_post_backs'] = True

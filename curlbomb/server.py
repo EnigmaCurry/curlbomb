@@ -6,6 +6,7 @@ import subprocess
 import _thread
 import hashlib
 import base64
+import traceback
 
 import tornado.web
 import tornado.ioloop
@@ -13,7 +14,6 @@ import tornado.gen
 import requests
 
 from .ssh import SSHRemoteForward
-from . import tls
 
 log = logging.getLogger('curlbomb.server')
 
@@ -177,23 +177,6 @@ def run_server(settings):
         log_file=settings['log_file'],
         get_callback=settings.get('get_callback', None)
     )
-
-    if settings['ssl'] is not False:
-        if settings['ssl'] is None:
-            # Create self-signed certificate for one use:
-            log.warn("No SSL certificate provided, creating a new self-signed certificate for this session")
-            cert = tls.create_self_signed_cert()
-            # Always pin the certificate if we are using self-signed cert:
-            settings['pin'] = True
-        else:
-            # Use pre-generated certificate file:
-            with open(settings['ssl'], 'br') as cert_file:
-                cert = tls.decrypt_cert_if_necessary(cert_file.read())
-        ssl_ctx = tls.create_ssl_ctx(cert)
-        settings['ssl_hash'] = tls.get_pinned_cert_hash(cert)
-        log.info("SSL certificate loaded")
-    else:
-        ssl_ctx = None
     
     unwrapped_script = settings['get_curlbomb_command'](settings, unwrapped=True)
     if not settings['client_quiet'] and settings['time_command']:
@@ -207,8 +190,11 @@ def run_server(settings):
             (r"/s", CurlbombStreamRequestHandler, curlbomb_args)
         ], default_handler_class=ErrorRequestHandler
     )
-    
-    httpd = app.listen(settings['port'], ssl_options=ssl_ctx, max_buffer_size=1024E9)
+
+    httpd = app.listen(
+        settings['port'],
+        ssl_options=settings['ssl_context'],
+        max_buffer_size=1024E9)
 
     ## Start SSH tunnel if requested:
     httpd.ssh_conn = None
@@ -247,9 +233,11 @@ def run_server(settings):
         _thread.start_new_thread(check_port_forward, ())
 
     try:
+        log.debug("server ready")
         tornado.ioloop.IOLoop.current().start()
     except KeyboardInterrupt:
-        pass
+        if settings['verbose']:
+            traceback.print_exc()
     finally:
         httpd.stop()
         if httpd.ssh_conn is not None:

@@ -67,7 +67,7 @@ class CurlbombTestBase(unittest.TestCase):
                     s.flush()
                     args = args.format(script=s.name)
             args = shlex.split(args)
-            log.info("starting curlbomb: {}".format(args))
+            log.warn("starting curlbomb: {}".format(args))
             settings = curlbomb.get_settings(args, override_defaults)
             client_cmd = settings['get_curlbomb_command'](settings)
             curlbomb_thread = CurlbombThread(settings)
@@ -161,7 +161,6 @@ class CurlbombTestBase(unittest.TestCase):
             '-p {port} -d localhost:{port}'.format(port=port),
             *client_scripts['short'])
         self.assertTrue("http://localhost:{port}".format(port=port) in client_cmd)
-
 
     def test_log_posts(self):
         script, expected_out = client_scripts['short']
@@ -271,6 +270,7 @@ class CurlbombTestBase(unittest.TestCase):
             '--domain localhost --ssl {ca_pem}'.format(ca_pem=ca_pem), script)
         # Try running without SSL certificate authority known:
         client_out, client_err = self.run_client(client_cmd)
+        print(client_err)
         self.assertTrue("SSL certificate problem" in client_err)
         # Try again by instructing curl where to find the CA cert:
         os.environ['CURL_CA_BUNDLE'] = ca_chain
@@ -278,6 +278,10 @@ class CurlbombTestBase(unittest.TestCase):
             client_out, client_err = self.run_client(client_cmd, expected_out)
         finally:
             del os.environ['CURL_CA_BUNDLE']
+
+    def test_ssl_self_signed(self):
+        """Tests --ssl self-signed cert generation"""
+        self.simple_runner('--ssl', *client_scripts['short'])
             
     def test_ping(self):
         args = 'ping'
@@ -315,3 +319,4 @@ class CurlbombTestBase(unittest.TestCase):
         cb.join()
         # Return code should be the last non-zero response:
         self.assertEquals(cb.returncode, 42)
+        
