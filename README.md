@@ -317,8 +317,8 @@ turned on implicitly.
 `--pin` Pin the SSL certificate fingerprint into the client curl
 command. This is used to bypass the root CA store of the client
 machine, and to tell it exactly what the server's SSL certificate
-looks like. This is useful for man-in-the-middle attack mitigation, as
-well as when using self-signed certificates. This makes the client
+looks like. This is useful for mitigating man-in-the-middle attacks,
+as well as when using self-signed certificates. This makes the client
 command quite a bit longer than usual.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
