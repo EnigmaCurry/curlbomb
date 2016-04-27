@@ -203,6 +203,13 @@ modified!) through traffic analysis at your ISP or any other router
 your connection flows through. Using TLS makes sure this doesn't
 happen. 
 
+Note that when the `--ssl` parameter is combined with the `--ssh`
+parameter, the SSL certificate should be generated for the host
+running the SSH server rather than the one running curlbomb. To
+prevent having to store the SSL certificate in plain text on your
+local machine, the file may be optionally PGP encrypted and curlbomb
+will decrypt it only when necessary.
+
 You can also specify `--ssl` by itself, without the path. In this
 case, a new self-signed certificate will be generated and used for
 this session only.
@@ -228,13 +235,6 @@ trust your certificate explicitly. This mitigates many
 man-in-the-middle type attacks that can happen with TLS, but you still
 need to take care that the client command is not modified or
 eavesdropped before being pasted into the client.
-
-Note that when the `--ssl` parameter is combined with the `--ssh`
-parameter, the SSL certificate should be generated for the host
-running the SSH server rather than the one running curlbomb. To
-prevent having to store the SSL certificate in plain text on your
-local machine, the file may be optionally PGP encrypted and curlbomb
-will decrypt it only when necessary.
 
 ### Aliases
 
