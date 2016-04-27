@@ -194,6 +194,12 @@ def get_settings(args=None, override_defaults={}):
         logging.getLogger('curlbomb').setLevel(level=logging.INFO)
         settings['log_post_backs'] = True
         logging.getLogger('tornado.access').setLevel(level=logging.INFO)
+
+    if args.debug:
+        settings['verbose'] = True
+        logging.getLogger('curlbomb').setLevel(level=logging.DEBUG)
+        settings['log_post_backs'] = True
+        logging.getLogger('tornado.access').setLevel(level=logging.DEBUG)
         
     if settings['require_knock'] and not settings['knock']:
         settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
