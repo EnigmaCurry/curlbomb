@@ -225,8 +225,8 @@ case, a new self-signed certificate will be generated and used for
 this session only.
 
 `--pin` can be used to extract the SSL certificate fingerprint and
-directly provide it to the client curl command (requires curl
->=7.39). This avoids having to trust the client's CA root certificate
+directly provide it to the client curl command (requires curl >=7.39). 
+This avoids having to trust the client's CA root certificate
 store, and trusts your certificate explicitly. When generating a
 self-signed certificate with `--ssl`, the `--pin` option is turned on
 automatically. Pinning adds some extra security benefits, but makes
