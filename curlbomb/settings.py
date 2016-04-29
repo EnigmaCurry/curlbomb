@@ -48,12 +48,27 @@ def get_curlbomb_command(settings, unwrapped=None):
             else:
                 hostname_header = ' -H "X-hostname: $(hostname)"'
 
+        url = "http{ssl}://{host}:{port}/r{knock}{hostname_header}".format(
+            ssl="s" if settings['ssl'] is not False else "",
+            host=settings['display_host'],
+            port=settings['display_port'],
+            knock=knock,
+            hostname_header=hostname_header
+        )
+        stream_url = "http{ssl}://{host}:{port}/s{knock}{hostname_header}".format(
+            ssl="s" if settings['ssl'] is not False else "",
+            host=settings['display_host'],
+            port=settings['display_port'],
+            knock=knock,
+            hostname_header=hostname_header
+        )
+                    
         logger = ""
         if settings['client_logging']:
             logger = " | tee curlbomb.log"
 
         if settings['receive_postbacks']:
-            callback_cmd="curl{pin_settings} -T - http{ssl}://{host}:{port}/s{knock}{hostname_header}"
+            callback_cmd="curl{pin_settings} -T - {stream_url}"
             if settings['client_quiet']:
                 callback_cmd = " | " + callback_cmd
             else:
@@ -62,39 +77,26 @@ def get_curlbomb_command(settings, unwrapped=None):
                 callback_cmd = (
                     ' && wget -q -O - --post-data="wget post-back finished. '
                     'wget can\'t stream the client output like curl can though '
-                    ':(\r\n" http{ssl}://{host}:{port}/s{knock}{hostname_header}')
+                    ':(\r\n" {stream_url}')
             logger += callback_cmd.format(
-                ssl="s" if settings['ssl'] is not False else "",
-                host=settings['display_host'],
-                port=settings['display_port'],
-                knock=knock,
-                pin_settings=pin_settings,
-                hostname_header=hostname_header
+                stream_url=stream_url,
+                pin_settings=pin_settings
                 )
-
+        
         if settings['shell_command'] is None or settings['survey']:
-            cmd = "{http_fetcher}{pin_settings} http{ssl}://{host}:{port}/r{knock}{hostname_header}{logger}".\
+            cmd = "{http_fetcher}{pin_settings} {url}{logger}".\
                   format(
                       http_fetcher=settings['http_fetcher'],
-                      ssl="s" if settings['ssl'] is not False else "",
-                      host=settings['display_host'],
-                      port=settings['display_port'],
-                      knock=knock,
-                      hostname_header=hostname_header,
+                      url=url,
                       pin_settings=pin_settings,
                       logger=logger)
         else:
-            cmd = "{shell_command} <({http_fetcher}{pin_settings} http{ssl}://{host}:{port}/r{knock}"\
-                  "{hostname_header}){logger}".format(
-                      http_fetcher=settings['http_fetcher'],
-                      shell_command=settings['shell_command'],
-                      ssl="s" if settings['ssl'] is not False else "",
-                      host=settings['display_host'],
-                      port=settings['display_port'],
-                      knock=knock,
-                      hostname_header=hostname_header,
-                      pin_settings=pin_settings,
-                      logger=logger)
+            cmd = "{shell_command} <({http_fetcher}{pin_settings} {url}){logger}".format(
+                shell_command=settings['shell_command'],
+                http_fetcher=settings['http_fetcher'],
+                pin_settings=pin_settings,
+                url=url,
+                logger=logger)
 
         return cmd
     else:
