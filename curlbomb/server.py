@@ -17,7 +17,6 @@ from .ssh import SSHRemoteForward
 
 log = logging.getLogger('curlbomb.server')
 
-
 class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     """Base RequestHandler
 
@@ -77,9 +76,15 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
             else:
                 # Shutdown:
                 log.warn("Served resource {} times. Done. Waiting for network buffers to clear".format(self._state['num_gets']))
-                # Wait 10s before shutting down, to make sure all network buffers clear
-                # TODO: there's gotta be a better way than this......
-                time.sleep(10)
+                # Hack to get tornado to shutdown AFTER the client has received all the data in the socket buffer
+                # This sets all the connected sockets to blocking with a short timeout and sends a blank datagram.
+                for fd, sock in httpd._sockets.items():
+                    sock.setblocking(True)
+                    sock.settimeout(0.1)
+                    try:
+                        sock.send(b"")
+                    except:
+                        pass
                 tornado.ioloop.IOLoop.current().stop()
 
     def write_error(self, status_code, **kwargs):
@@ -194,6 +199,7 @@ def run_server(settings):
         ], default_handler_class=ErrorRequestHandler
     )
 
+    global httpd
     httpd = app.listen(
         settings['port'],
         ssl_options=settings['ssl_context'],
