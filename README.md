@@ -6,7 +6,7 @@ You know all those docs for the cool and hip software projects that
 start out by telling you to install their software in one line, like
 this?
 
-    bash <(curl http://example.com/install.sh)
+    curl http://example.com/install.sh | bash
 
 I call that a curl bomb... I don't know if anyone else does.
 
