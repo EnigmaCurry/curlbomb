@@ -389,16 +389,17 @@ specified, so the client command will still show it as running in
 bash. The command you specified is put into the wrapped script. See
 `--unwrapped` to change this behaviour.
 
-`--hash SHA256` Specify the expected SHA-256 hash of the script and the
-server will verify that it actually has that hash. This is useful if
-you are piping a script from someplace outside of your control, like
-from the network. This prevents the server from serving a script other
-than the version you were expecting.
+`--hash SHA256` Specify the expected SHA-256 hash of the script and
+the server will verify that it actually has that hash before the
+server starts. This is useful if you are pipeing a script from
+someplace outside of your control, like from the network. This
+prevents the server from serving a script other than the version you
+were expecting.
 
 `--signature FILE_OR_URL [GPG_ID ...]` Specify the file or URL
 containing the GPG signature for the script. Optionally specify a list
 of GPG key identifiers that are allowed to sign the script. The script
-will be checked for a valid signature before being served.
+will be checked for a valid signature before the server starts.
 
 `SCRIPT` The script or other resource to serve via curlbomb. You can
 also leave this blank (or specify '-') and the resource will be read
