@@ -120,6 +120,8 @@ class CurlbombTestBase(unittest.TestCase):
         cb, client_cmd = self.get_curlbomb('-v -n 4', script)
         for x in range(4):
             self.run_client(client_cmd, expected_out)
+        # Give the server a chance to shutdown:
+        time.sleep(1)
         # Run a fifth time should fail:
         self.run_client(client_cmd, '', re.compile("^curl.*Connection refused"))
 
