@@ -398,8 +398,10 @@ were expecting.
 
 `--signature FILE_OR_URL [GPG_ID ...]` Specify the file or URL
 containing the GPG signature for the script. Optionally specify a list
-of GPG key identifiers that are allowed to sign the script. The script
-will be checked for a valid signature before the server starts.
+of GPG key identifiers that are allowed to sign the script. If no
+GPG_ID is specified, any valid signature from your keyring is
+accepted. The script will be checked for a valid signature before the
+server starts.
 
 `SCRIPT` The script or other resource to serve via curlbomb. You can
 also leave this blank (or specify '-') and the resource will be read
