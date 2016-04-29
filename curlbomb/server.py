@@ -77,6 +77,9 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
             else:
                 # Shutdown:
                 log.info("Served resource {} times. Done.".format(self._state['num_gets']))
+                # Wait 10s before shutting down, to make sure all network buffers clear
+                # TODO: there's gotta be a better way than this......
+                time.sleep(10)
                 tornado.ioloop.IOLoop.current().stop()
 
     def write_error(self, status_code, **kwargs):
