@@ -76,7 +76,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
                     self._allowed_gets - num_post_backs))
             else:
                 # Shutdown:
-                log.info("Served resource {} times. Done.".format(self._state['num_gets']))
+                log.warn("Served resource {} times. Done. Waiting for network buffers to clear".format(self._state['num_gets']))
                 # Wait 10s before shutting down, to make sure all network buffers clear
                 # TODO: there's gotta be a better way than this......
                 time.sleep(10)
