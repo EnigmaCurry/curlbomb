@@ -376,7 +376,7 @@ disables that. This is inherently less secure than the default.
 
 ### Run subcommand
 
-    curlbomb run [-c COMMAND] [SCRIPT]
+    curlbomb run [-c COMMAND] [--hash SHA256] [--signature FILE_OR_URL [GPG_ID ...]] [SCRIPT]
 
 Runs a shell script on the remote client.
 
