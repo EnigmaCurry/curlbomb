@@ -354,8 +354,9 @@ source. --disable-postback prevents the command from being piped back
 to the server (as source doesn't have any output, and strangely fails
 to do it's job when you do pipe it somewhere else.)
 
-`--disable-postback` Disables sending client output to the
-server. Note that --log-posts will have no effect with this enabled.
+`-1, --disable-postback` Disables sending client output to the
+server. This is necessary for interactive scripts. Note that
+--log-posts will have no effect with this enabled.
 
 `--client-logging` Logs all client output locally on the client to a
 file called curlbomb.log

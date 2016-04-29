@@ -91,7 +91,13 @@ def get_curlbomb_command(settings, unwrapped=None):
                       pin_settings=pin_settings,
                       logger=logger)
         else:
-            cmd = "{shell_command} <({http_fetcher}{pin_settings} {url}){logger}".format(
+            cmd = "{shell_command} <({http_fetcher}{pin_settings} {url}){logger}"
+            if not settings['receive_postbacks']:
+                # If we don't care about receiving client output, pipe
+                # it rather than redirecting. This is needed for
+                # interactive scripts:
+                cmd = "{http_fetcher}{pin_settings} {url} | {shell_command}{logger}"
+            cmd = cmd.format(
                 shell_command=settings['shell_command'],
                 http_fetcher=settings['http_fetcher'],
                 pin_settings=pin_settings,
