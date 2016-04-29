@@ -290,6 +290,8 @@ def get_settings(args=None, override_defaults={}):
     except AttributeError:
         # No sub-command specified, default to run command with stdin
         args.command = None
+        args.script_hash = None
+        args.signature = None
         args.resource = settings['stdin']
         prepare_cmd = run.prepare
     prepare_cmd(args, settings, parser)
