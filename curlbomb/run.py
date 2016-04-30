@@ -1,7 +1,10 @@
 import sys
+import re
 from io import BytesIO
 import logging
 import hashlib
+
+import requests
 
 from .gpg import decrypt_resource_if_necessary, verify_resource
 
@@ -18,7 +21,8 @@ def add_parser(subparsers):
                             help="Verify SCRIPT against this GPG signature. "
                             "Can be a file or a http(s) URL. Specify list of GPG IDs to allow, "
                             "otherwise any in your keyring will work.")
-    run_parser.add_argument('resource', metavar="SCRIPT", nargs='?', default=sys.stdin)
+    run_parser.add_argument('resource', metavar="SCRIPT", help="path or URL to script, or - to read from STDIN",
+                            nargs='?', default=sys.stdin)
     run_parser.set_defaults(prepare_command=prepare)
 
 
@@ -37,8 +41,15 @@ def prepare(args, settings, parser):
         if args.resource == settings['stdin'] or args.resource == '-':
             settings['resource'] = BytesIO(settings['stdin'].buffer.read())
         else:
-            settings['resource'] = open(args.resource, 'br')
-
+            if re.match("http[s]?://", args.resource): 
+                # Download resource from URL:
+                log.info("Downloading resource: {}".format(args.resource))
+                r = requests.get(args.resource)
+                settings['resource'] = BytesIO(r.content)
+            else:
+                # Read resource from disk:
+                settings['resource'] = open(args.resource, 'br')
+            
     settings['resource'] = decrypt_resource_if_necessary(settings['resource'])
 
     if args.script_hash is not None:
