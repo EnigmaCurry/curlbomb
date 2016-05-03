@@ -43,7 +43,7 @@ class CurlbombThread(threading.Thread):
 
 class CurlbombTestBase(unittest.TestCase):
 
-    def get_curlbomb(self, args, script=None):
+    def get_curlbomb(self, args, script=None, override_defaults={}):
         """Prepare curlbomb to run in a thread
 
         Assumes args has a '{script}' formatter in it to replace a temporary path with
@@ -55,7 +55,6 @@ class CurlbombTestBase(unittest.TestCase):
             script = bytes(script, "utf-8")
         stdin = "{script}" not in args and script is not None
         try:
-            override_defaults = {}
             log.info("Using stdin: {}".format(stdin))
             if stdin:
                 s = TextIOWrapper(BytesIO(script))
@@ -77,13 +76,13 @@ class CurlbombTestBase(unittest.TestCase):
         finally:
             s.close()
 
-    def run_client(self, client_cmd, expected_out=None, expected_err=None):
+    def run_client(self, client_cmd, expected_out=None, expected_err=None, stdin=""):
         # Have to run explicitly in bash to get subprocesses to work:
         client_cmd = ['bash','-c',client_cmd]
         log.info("starting client: {}".format(client_cmd))
         client_proc = subprocess.Popen(client_cmd, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-        client_out, client_err = client_proc.communicate()
+                                       stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        client_out, client_err = client_proc.communicate(stdin)
         client_out = client_out.decode("utf-8")
         client_err = client_err.decode("utf-8")
         log.info('client out: {}'.format(repr(client_out)))
@@ -324,15 +323,20 @@ class CurlbombTestBase(unittest.TestCase):
         
     def test_symmetric_encryption(self):
         """Tests --encrypt"""
-        raise NotImplementedError("implement me")
-        args = '-e'
-        cb, client_cmd = self.get_curlbomb(args)
+        script, expected_out = client_scripts['short']
+        cb, client_cmd = self.get_curlbomb('-e --unwrapped', script)
         passphrase = cb.settings['passphrase']
-
+        client_cmd = client_cmd.replace("gpg -d", "gpg -d --batch --passphrase {}".format(passphrase))
+        client_out, client_err = self.run_client(client_cmd)
+        self.assertEquals(client_out, expected_out)
+    
     def test_passphrase(self):
         """Tests --passphrase"""
-        raise NotImplementedError("implement me")
+        script, expected_out = client_scripts['short']
+        cb, client_cmd = self.get_curlbomb('--passphrase --unwrapped', script, {"passphrase": "asdf"})
+        passphrase = cb.settings['passphrase']
+        self.assertEquals(passphrase, "asdf")
+        client_cmd = client_cmd.replace("gpg -d", "gpg -d --batch --passphrase {}".format(passphrase))
+        client_out, client_err = self.run_client(client_cmd)
+        self.assertEquals(client_out, expected_out)
 
-    def test_encrypt_to(self):
-        """Tests --encrypt-to"""
-        raise NotImplementedError("implement me")

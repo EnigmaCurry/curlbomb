@@ -255,7 +255,8 @@ def get_settings(args=None, override_defaults={}):
         if args.encrypt_to:
             print("--passphrase and --encrypt-to options are incompatible with each other.")
             sys.exit(1)
-        settings['passphrase'] = input("Enter passphrase to encrypt resource: ")
+        if not settings['passphrase']:
+            settings['passphrase'] = input("Enter passphrase to encrypt resource: ")
         if len(settings['passphrase']) == 0:
             log.error("Passphrase cannot be blank")
             sys.exit(1)
