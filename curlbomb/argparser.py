@@ -53,7 +53,9 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         default=None)
     parser.add_argument('--ssl', metavar="CERTIFICATE",
                         help="Use SSL with the given certificate file "
-                        "(optionally PGP encrypted)", nargs="?", default=False)
+                        "(optionally PGP encrypted.) CERTIFICATE may be specified as a "
+                        "single - to generate a new self-signed certificate and to turn "
+                        "on --pin", default=False)
     parser.add_argument('--pin', help="Pin the SSL certificate hash into the client "
                         "command to force curl to use our certificate"
                         " (requires --ssl)", action="store_true")

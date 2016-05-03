@@ -156,8 +156,8 @@ def get_settings(args=None, override_defaults={}):
         'require_hostname_header': False,
         # Log client stdout to server stdout:
         'log_post_backs': args.log_post_backs,
-        # Enable TLS
-        'ssl': args.ssl,
+        # Enable TLS - Path to cert or None specifies to generate a self-signed cert
+        'ssl': None if args.ssl == "-" else args.ssl,
         # ssl context passed to server
         'ssl_context': None,
         # Enable SSL certificate pinning in client command:

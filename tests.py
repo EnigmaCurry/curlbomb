@@ -283,7 +283,7 @@ class CurlbombTestBase(unittest.TestCase):
 
     def test_ssl_self_signed(self):
         """Tests --ssl self-signed cert generation"""
-        self.simple_runner('--ssl', *client_scripts['short'])
+        self.simple_runner('--ssl -', *client_scripts['short'])
             
     def test_ping(self):
         args = 'ping'

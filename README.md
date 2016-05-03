@@ -221,7 +221,7 @@ prevent having to store the SSL certificate in plain text on your
 local machine, the file may be optionally PGP encrypted and curlbomb
 will decrypt it only when necessary.
 
-You can also specify `--ssl` by itself, without the path. In this
+You can also specify the SSL certificate path as a single `-`. In this
 case, a new self-signed certificate will be generated and used for
 this session only.
 
@@ -234,7 +234,7 @@ automatically. Pinning adds some extra security benefits, but makes
 the client command you have to paste/type much longer than it usually
 is, for example:
 
-    $ echo "whoami" | curlbomb --ssl
+    $ echo "whoami" | curlbomb --ssl -
     WARNING:curlbomb.server:No SSL certificate provided, creating a new self-signed certificate for this session
     Paste this command on the client:
 	
@@ -261,7 +261,7 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 ## Command Line Args
 
     curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
-             [-1] [--ssh SSH_FORWARD] [--ssl [CERTIFICATE]] [--pin]
+             [-1] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--pin]
              [--survey] [--unwrapped] [--client-logging] [--client-quiet]
              [--mime-type MIME_TYPE] [--disable-knock] [--knock KNOCK]
              [--version]
@@ -318,13 +318,12 @@ running curlbomb. The syntax for SSH_FORWARD is
 GatewayPorts setting turned on to allow remote clients to connect to
 this port. See sshd_config(5).
 
-`--ssl [CERTIFICATE]` Run the HTTP server with TLS
-encryption. Optionally provide the full path to your SSL certificate,
-which may be PGP encrypted. The file should contain the entire
-certificate chain, including the CA certificate, if any. If no SSL
-certificate path is provided, a temporary self-signed certificate will
-be generated for the current curlbomb session and `--pin` will be
-turned on implicitly.
+`--ssl CERTIFICATE` Run the HTTP server with TLS encryption. Provide
+the full path to your SSL certificate, which may be PGP encrypted. The
+file should contain the entire certificate chain, including the CA
+certificate, if any. If the SSL certificate path is specified as `-`, a
+temporary self-signed certificate will be generated for the current
+curlbomb session and `--pin` will be turned on implicitly.
 
 `--pin` (requires curl>=7.39.0) Pin the SSL certificate fingerprint
 into the client curl command. This is used to bypass the root CA store
