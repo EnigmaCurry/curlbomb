@@ -7,10 +7,15 @@ import shlex
 
 from . import run
 from . import tls
+from . import gpg
 
 log = logging.getLogger('curlbomb.settings')
 
 from .argparser import argparser
+
+def random_passphrase(length):
+    return base64.b64encode(bytes(random.sample(range(256), length)),
+                            altchars=b'_.').decode("utf-8")[:length]
 
 def get_curlbomb_command(settings, unwrapped=None):
     """Get the curlbomb command
@@ -66,7 +71,7 @@ def get_curlbomb_command(settings, unwrapped=None):
         decrypter = ""
         if settings['client_decrypt']:
             decrypter = " | gpg -d"
-                    
+
         logger = ""
         if settings['client_logging']:
             logger = " | tee curlbomb.log"
@@ -187,9 +192,11 @@ def get_settings(args=None, override_defaults={}):
         # Client quiet flag
         'client_quiet': args.client_quiet,
         # Client decryption:
-        'client_decrypt': args.encrypt,
-        # Server encryption:
-        'encrypt': args.encrypt,
+        'client_decrypt': args.encrypt or args.passphrase or args.encrypt_to,
+        # Server encryption (random_passphrase, user_passphrase, recipient):
+        'encryption_type': "user_passphrase" if args.passphrase else "recipient" if args.encrypt_to else "random_passphrase" if args.encrypt else None,
+        # the passphrase that was generated or supplied by the user:
+        'passphrase': None,
         # Popen object processing log_post_backs
         'log_process': None,
         # File to receive log_post_backs:
@@ -223,9 +230,8 @@ def get_settings(args=None, override_defaults={}):
         logging.getLogger('tornado.access').setLevel(level=logging.DEBUG)
         
     if settings['require_knock'] and not settings['knock']:
-        settings['knock'] = base64.b64encode(bytes(random.sample(range(256), 12)),
-                                             altchars=b'_.').decode("utf-8")
-
+        settings['knock'] = random_passphrase(12)
+        
     if settings['survey']:
         # Don't recieve post backs in survey mode:
         settings['receive_postbacks'] = False
@@ -245,9 +251,16 @@ def get_settings(args=None, override_defaults={}):
         print("--pin requires --ssl")
         sys.exit(1)
 
-    if args.encrypt is not None and len(args.encrypt) > 0 and args.passphrase:
-        print("--passphrase requires not specifying any GPG_IDs with --encrypt")
-        sys.exit(1)
+    if settings['encryption_type'] == 'user_passphrase':
+        if args.encrypt_to:
+            print("--passphrase and --encrypt-to options are incompatible with each other.")
+            sys.exit(1)
+        settings['passphrase'] = input("Enter passphrase to encrypt resource: ")
+        if len(settings['passphrase']) == 0:
+            log.error("Passphrase cannot be blank")
+            sys.exit(1)
+    elif settings['encryption_type'] == 'random_passphrase':
+        settings['passphrase'] = random_passphrase(25)
 
     if args.wget:
         settings['http_fetcher'] = "wget -q -O -"
@@ -316,4 +329,10 @@ def get_settings(args=None, override_defaults={}):
         prepare_cmd = run.prepare
     prepare_cmd(args, settings, parser)
 
+    # Encrypt the resource if required:
+    if settings['encryption_type'] in ('user_passphrase', 'random_passphrase'):
+        settings['resource'] = gpg.encrypt_resource_symmetric(settings['resource'], settings['passphrase'])
+    elif settings['encryption_type'] == 'recipient':
+        settings['resource'] = gpg.encrypt_resource_to_recipients(settings['resource'], args.encrypt_to)                  
+    
     return settings

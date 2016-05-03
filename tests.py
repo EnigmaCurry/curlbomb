@@ -322,3 +322,17 @@ class CurlbombTestBase(unittest.TestCase):
         # Return code should be the last non-zero response:
         self.assertEquals(cb.returncode, 42)
         
+    def test_symmetric_encryption(self):
+        """Tests --encrypt"""
+        raise NotImplementedError("implement me")
+        args = '-e'
+        cb, client_cmd = self.get_curlbomb(args)
+        passphrase = cb.settings['passphrase']
+
+    def test_passphrase(self):
+        """Tests --passphrase"""
+        raise NotImplementedError("implement me")
+
+    def test_encrypt_to(self):
+        """Tests --encrypt-to"""
+        raise NotImplementedError("implement me")

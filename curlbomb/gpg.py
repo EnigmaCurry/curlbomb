@@ -47,6 +47,36 @@ def decrypt_resource_if_necessary(resource):
     decrypted_resource = BytesIO(decrypted)
     return decrypted_resource
 
+def encrypt_resource_to_recipients(resource, recipients):
+    """Encrypt resource to a list of GPG IDs"""
+    cmd = ['gpg', '--batch', '-e', *['-r {}'.format(r) for r in recipients]]
+    log.debug(cmd)
+    with subprocess.Popen(cmd,
+                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE) as p:
+        p.stdin.write(resource.read())
+        encrypted, stderr = p.communicate()
+        if p.returncode != 0:
+            log.error(stderr)
+            raise RuntimeError("Resource failed to encrypt (public-key)")
+        encrypted_resource = BytesIO(encrypted)
+        return encrypted_resource
+    
+def encrypt_resource_symmetric(resource, passphrase):
+    """Encrypt resource with passphrase"""
+    with subprocess.Popen(['gpg', '--batch', '-c','--passphrase-fd','0'],
+                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE) as p:
+        p.stdin.write(bytes(passphrase, "utf-8"))
+        p.stdin.write(b"\n")
+        p.stdin.write(resource.read())
+        encrypted, stderr = p.communicate()
+        if p.returncode != 0:
+            log.error(stderr)
+            raise RuntimeError("Resource failed to encrypt (symmetric)")
+        encrypted_resource = BytesIO(encrypted)
+        return encrypted_resource
+    
 def gpg_key_info(identifier):
     with subprocess.Popen(
             ['gpg','-k',identifier],

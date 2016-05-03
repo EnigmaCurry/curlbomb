@@ -4,8 +4,6 @@ import logging
 import tempfile
 import subprocess
 import _thread
-import hashlib
-import base64
 import traceback
 
 import tornado.web
@@ -220,10 +218,10 @@ def run_server(settings):
     cmd = settings['get_curlbomb_command'](settings)
     if not settings['quiet']:
         if settings['stdout'].isatty():
-            sys.stderr.write("Paste this command on the client:\n")
-            sys.stderr.write("\n")
-            sys.stderr.write("  {}\n".format(cmd))
-            sys.stderr.write("\n")
+            sys.stderr.write("Paste this command on the client:\n\n")
+            sys.stderr.write("  {}\n\n".format(cmd))
+            if settings['passphrase']:
+                sys.stderr.write("Client passphrase: {}\n\n".format(settings['passphrase']))
         else:
             sys.stderr.write("{}\n".format(cmd))
 
