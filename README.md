@@ -40,7 +40,7 @@ So does curlbomb measure up to making this a good idea? Decide for yourself:
 | Conveniece      | Yup, sure is.                                                                                                     | I think so.                                                                                                                                                          |
 | Trust           | Is it even SSL? Do you know/trust the URL and it's author?                                                        | Self hosted server and SSL verifies connection                                                                                                                       |
 | Security        | Even if you verify the script beforehand, are you sure it hasn't changed?                                         | Self hosted script, you're in control of the contents.                                                                                                               |
-| Privacy         | Anyone who knows the URL can download/run. Cannot contain private information like passwords.                     | curlbomb requires a passphrase (knock) and only serves a file one time (by default.) Put sensitive data like SSH keys and passphrases into your script as necessary. |
+| Privacy         | Anyone who knows the URL can download/run. Cannot contain private information like passwords.                     | curlbomb requires a passphrase (knock) and only serves a file one time (by default.) Optionally gpg encrypt the contents of the script. Put sensitive data like SSH keys and passphrases into your script as necessary. |
 | Repeatability   | Is the script going to stay at the same URL forever? Can you specify any parameters or at least a version number? | It's your script, read whatever env vars you want. You can keep it checked into your own git repository and serve it from anywhere anytime.                          |
 [comment]: # (end feature table)
 
@@ -261,10 +261,10 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 ## Command Line Args
 
     curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
-             [-1] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--pin]
-             [--survey] [--unwrapped] [--client-logging] [--client-quiet]
-             [--mime-type MIME_TYPE] [--disable-knock] [--knock KNOCK]
-             [--version]
+             [-1] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--pin] [-e]
+             [--encrypt-to GPG_ID] [--passphrase] [--survey] [--unwrapped]
+             [--client-logging] [--client-quiet] [--mime-type MIME_TYPE]
+             [--disable-knock] [--knock KNOCK] [--version]
              {run,put,get,ping,ssh-copy-id} ...
 				   
 curlbomb has a few subcommands:
@@ -332,6 +332,20 @@ certificate looks like. This is useful for mitigating
 man-in-the-middle attacks, as well as when using self-signed
 certificates. This makes the client command quite a bit longer than
 usual.
+
+`-e, --encrypt` Encrypt the resource with gpg before serving it to the
+client. A randomly generated symmetric passphrase will be used printed
+below the client command on the server. This passphrase must be input
+on the client. You can specify the passphrase to use interactively
+with `--passphrase`. You can use public key encryption if you use
+`--encrypt-to`
+
+`--passphrase` Encrypt the resource with a passphrase interactively
+asked on server start.
+
+`--encrypt-to GPG_ID` Encrypt the resource with the given gpg
+identity. Can be specified multiple times to encrypt to multiple
+recipients.
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
 shell command. Useful for testing script retrieval without running
