@@ -62,6 +62,10 @@ def get_curlbomb_command(settings, unwrapped=None):
             knock=knock,
             hostname_header=hostname_header
         )
+
+        decrypter = ""
+        if settings['client_decrypt']:
+            decrypter = " | gpg -d"
                     
         logger = ""
         if settings['client_logging']:
@@ -84,14 +88,15 @@ def get_curlbomb_command(settings, unwrapped=None):
                 )
         
         if settings['shell_command'] is None or settings['survey']:
-            cmd = "{http_fetcher}{pin_settings} {url}{logger}".\
+            cmd = "{http_fetcher}{pin_settings} {url}{decrypter}{logger}".\
                   format(
                       http_fetcher=settings['http_fetcher'],
                       url=url,
                       pin_settings=pin_settings,
+                      decrypter=decrypter,
                       logger=logger)
         else:
-            cmd = "{shell_command} <({http_fetcher}{pin_settings} {url}){logger}"
+            cmd = "{shell_command} <({http_fetcher}{pin_settings} {url}{decrypter}){logger}"
             if not settings['receive_postbacks']:
                 # If we don't care about receiving client output, pipe
                 # it rather than redirecting. This is needed for
@@ -102,6 +107,7 @@ def get_curlbomb_command(settings, unwrapped=None):
                 http_fetcher=settings['http_fetcher'],
                 pin_settings=pin_settings,
                 url=url,
+                decrypter=decrypter,
                 logger=logger)
 
         return cmd
@@ -180,6 +186,10 @@ def get_settings(args=None, override_defaults={}):
         'client_logging': args.client_logging,
         # Client quiet flag
         'client_quiet': args.client_quiet,
+        # Client decryption:
+        'client_decrypt': args.encrypt,
+        # Server encryption:
+        'encrypt': args.encrypt,
         # Popen object processing log_post_backs
         'log_process': None,
         # File to receive log_post_backs:
@@ -234,7 +244,11 @@ def get_settings(args=None, override_defaults={}):
     if args.pin and args.ssl is False:
         print("--pin requires --ssl")
         sys.exit(1)
-        
+
+    if args.encrypt is not None and len(args.encrypt) > 0 and args.passphrase:
+        print("--passphrase requires not specifying any GPG_IDs with --encrypt")
+        sys.exit(1)
+
     if args.wget:
         settings['http_fetcher'] = "wget -q -O -"
         if args.log_post_backs:

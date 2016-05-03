@@ -59,6 +59,13 @@ def argparser(formatter_class=argparse.HelpFormatter):
     parser.add_argument('--pin', help="Pin the SSL certificate hash into the client "
                         "command to force curl to use our certificate"
                         " (requires --ssl)", action="store_true")
+    parser.add_argument("-e", "--encrypt", action="store_true",
+                        help="Encrypt resource with GPG before serving. Will use a randomly generated "
+                        "symmetric passphrase unless --encrypt-to or --passphrase is specified.")
+    parser.add_argument("--encrypt-to", action="append", metavar="GPG_ID", help="Encrypt with the "
+                        "public key specified instead of a passphrase. Can be specified multiple times.")
+    parser.add_argument("--passphrase", action="store_true",
+                        help="Ask for a symmetric passphrase to encrypt with instead of a random one.")
     parser.add_argument('--survey', help="Just a survey mission, no bomb run "
                         "(just get the script, don't run it)", action="store_true")
     parser.add_argument('--unwrapped',
