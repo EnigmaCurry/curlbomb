@@ -334,7 +334,7 @@ certificates. This makes the client command quite a bit longer than
 usual.
 
 `-e, --encrypt` Encrypt the resource with gpg before serving it to the
-client. A randomly generated symmetric passphrase will be used printed
+client. A randomly generated symmetric passphrase will be printed
 below the client command on the server. This passphrase must be input
 on the client. You can specify the passphrase to use interactively
 with `--passphrase`. You can use public key encryption if you use
