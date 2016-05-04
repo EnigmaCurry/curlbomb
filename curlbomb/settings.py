@@ -315,10 +315,6 @@ def get_settings(args=None, override_defaults={}):
     if settings['ssl'] is not False:
         settings['ssl_context'] = tls.get_ssl_context_from_settings(settings)
             
-    if not settings['stdout'].isatty() and not settings['quiet']:
-        # Imply we want log-posts if we pipe to a non-tty:
-        settings['log_post_backs'] = True
-
     try:
         prepare_cmd = args.prepare_command
     except AttributeError:

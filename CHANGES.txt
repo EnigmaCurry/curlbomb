@@ -1,4 +1,7 @@
 1.4.0
+ * --log-posts is only turned on explicity. Prior to 1.4.0 it was
+   turned on automatically when pipeing output. This was just
+   confusing.
  * Adds run --hash argument to require a specific SHA256 of the input
    script.
  * Adds run --signature argument require that the input script match

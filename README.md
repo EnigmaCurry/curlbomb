@@ -301,9 +301,7 @@ need to show an external URL.
 case where the client doesn't have curl installed. Not compatible with
 `--log--posts` or the `put` and `get` subcommands. :(
 
-`-l, --log-posts` Log the client stdout to the server stdout. This is
-off by default, but is turned on automatically when you pipe curlbomb
-stdout to another process (unless you use -q.)
+`-l, --log-posts` Log the client stdout to the server stdout.
 
 `-q, --quiet` Be more quiet. Don't print the client curlbomb command.
 
