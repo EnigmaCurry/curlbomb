@@ -6,8 +6,9 @@
    script.
  * Adds run --signature argument require that the input script match
    the given gpg signature file.
- * Fixes scripts that need an interactive tty. Must use -1. -1 will
-   probably be the default in a future release.
+ * Removes -1 and --disable-postback. Both are now the default. Use -l
+   if you want to wait for the client to finish.
+ * Fixes scripts that need an interactive tty. Use --pipe.
  * run SCRIPT can now be a URL in addition to a file path.
  * --ssl now always requires a CERTIFICATE. You must specify the cert
    as '-' if you want to use self-signed auto-generated certificate.
