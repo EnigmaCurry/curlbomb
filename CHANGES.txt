@@ -1,3 +1,16 @@
+1.4.0
+ * Adds run --hash argument to require a specific SHA256 of the input
+   script.
+ * Adds run --signature argument require that the input script match
+   the given gpg signature file.
+ * Fixes scripts that need an interactive tty. Must use -1. -1 will
+   probably be the default in a future release.
+ * run SCRIPT can now be a URL in addition to a file path.
+ * --ssl now always requires a CERTIFICATE. You must specify the cert
+   as '-' if you want to use self-signed auto-generated certificate.
+ * Adds --encrypt, --passphrase, and --encrypt-to options for GPG
+   encryption of the resource.
+
 1.3.1
  * Adds path to curlbomb python modules in --version output.
  * Allow HTTP HEAD requests to / and /r without increasing num_gets or
