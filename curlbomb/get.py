@@ -20,6 +20,7 @@ def add_parser(subparsers):
 
 def prepare(args, settings, parser):
     settings['client_quiet'] = True
+    settings['receive_postbacks'] = True
     if args.dest is None:
         dest = os.curdir
     else:

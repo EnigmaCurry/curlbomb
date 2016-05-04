@@ -156,7 +156,7 @@ def get_settings(args=None, override_defaults={}):
         # Store args object:
         'args': args,
         # Instruct client to post stdout back to the server:
-        'receive_postbacks': True,
+        'receive_postbacks': args.log_post_backs,
         # Run client script with this shell interpreter:
         'shell_command': 'bash',
         # Client fetches URL resources with this command:
@@ -214,19 +214,19 @@ def get_settings(args=None, override_defaults={}):
         # Output how long the command takes:
         'time_command': False,
         # Function to get curlbomb command given settings:
-        'get_curlbomb_command': get_curlbomb_command
+        'get_curlbomb_command': get_curlbomb_command,
+        # Shutdown timeout:
+        'server_shutdown_timeout': 2
     }
     settings.update(override_defaults)
     
     if args.verbose:
         logging.getLogger('curlbomb').setLevel(level=logging.INFO)
-        settings['log_post_backs'] = True
         logging.getLogger('tornado.access').setLevel(level=logging.INFO)
 
     if args.debug:
         settings['verbose'] = True
         logging.getLogger('curlbomb').setLevel(level=logging.DEBUG)
-        settings['log_post_backs'] = True
         logging.getLogger('tornado.access').setLevel(level=logging.DEBUG)
         
     if settings['require_knock'] and not settings['knock']:
@@ -238,7 +238,8 @@ def get_settings(args=None, override_defaults={}):
         settings['client_logging'] = False
 
     if args.disable_postback:
-        settings['receive_postbacks'] = False
+        log.error("--disable-postback and -1 are no longer valid options")
+        sys.exit(1)
         
     if settings['unwrapped']:
         # Output the unrwapped version of the curlbomb Without this
@@ -310,7 +311,6 @@ def get_settings(args=None, override_defaults={}):
         settings['display_host'] = parts[0]
         if len(parts) > 1:
             settings['display_port'] = parts[1]
-
 
     if settings['ssl'] is not False:
         settings['ssl_context'] = tls.get_ssl_context_from_settings(settings)

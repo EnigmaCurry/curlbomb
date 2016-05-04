@@ -261,7 +261,7 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 ## Command Line Args
 
     curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
-             [-1] [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--pin] [-e]
+             [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--pin] [-e]
              [--encrypt-to GPG_ID] [--passphrase] [--survey] [--unwrapped]
              [--client-logging] [--client-quiet] [--mime-type MIME_TYPE]
              [--disable-knock] [--knock KNOCK] [--version]
@@ -355,19 +355,13 @@ boilerplate that curlbomb normally wraps inside of a nested curlbomb.
 This parameter is useful when you want to source variables into your
 current shell:
 
-    echo "export PATH=/asdf/bin:$PATH" | curlbomb -c source --unwrapped --disable-postback
+    echo "export PATH=/asdf/bin:$PATH" | curlbomb -c source --unwrapped
 
 Without the --unwrapped option, the client command will not run the
 source command directly, but instead a bash script with a source
 inside it. This won't work for sourcing environment variables in your
 shell, so use --unwrapped when you want to use
-source. --disable-postback prevents the command from being piped back
-to the server (as source doesn't have any output, and strangely fails
-to do it's job when you do pipe it somewhere else.)
-
-`-1, --disable-postback` Disables sending client output to the
-server. This is necessary for interactive scripts. Note that
---log-posts will have no effect with this enabled.
+source. 
 
 `--client-logging` Logs all client output locally on the client to a
 file called curlbomb.log
