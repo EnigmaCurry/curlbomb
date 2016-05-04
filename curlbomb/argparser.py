@@ -75,6 +75,9 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         action="store_true")
     parser.add_argument('--mime-type', help="The content type to serve",
                         default="text/plain")
+    parser.add_argument('--pipe', help="Pipe to shell command rather than doing process substitution. "
+                        "This is necessary for most interactive scripts.",
+                        action="store_true")
     parser.add_argument('--disable-knock', action="store_true",
                         help="Don't require authentication (no X-knock header)")
     parser.add_argument('--knock', help="Use a specific knock rather than random",

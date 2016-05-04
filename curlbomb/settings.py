@@ -102,7 +102,7 @@ def get_curlbomb_command(settings, unwrapped=None):
                       logger=logger)
         else:
             cmd = "{shell_command} <({http_fetcher}{pin_settings} {url}{decrypter}){logger}"
-            if not settings['receive_postbacks']:
+            if settings['pipe_to_shell_command']:
                 # If we don't care about receiving client output, pipe
                 # it rather than redirecting. This is needed for
                 # interactive scripts:
@@ -216,7 +216,9 @@ def get_settings(args=None, override_defaults={}):
         # Function to get curlbomb command given settings:
         'get_curlbomb_command': get_curlbomb_command,
         # Shutdown timeout:
-        'server_shutdown_timeout': 2
+        'server_shutdown_timeout': 2,
+        # Normally we do process substituition, but we can do a regular pipe as well:
+        'pipe_to_shell_command': args.pipe
     }
     settings.update(override_defaults)
     

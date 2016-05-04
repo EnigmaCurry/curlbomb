@@ -78,13 +78,14 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
                 log.info("Served resource {} times. Done. Waiting for network buffers to clear".format(self._state['num_gets']))
                 # Hack to get tornado to shutdown AFTER the client has received all the data in the socket buffer
                 # This sets all the connected sockets to blocking with a short timeout and try to read data.
-                for fd, sock in httpd._sockets.items():
-                    sock.setblocking(True)
-                    sock.settimeout(self._shutdown_timeout)
-                    try:
-                        sock.recv(1)
-                    except:
-                        pass
+                if self._shutdown_timeout > 0:
+                    for fd, sock in httpd._sockets.items():
+                        sock.setblocking(True)
+                        sock.settimeout(self._shutdown_timeout)
+                        try:
+                            sock.recv(1)
+                        except:
+                            pass
                 tornado.ioloop.IOLoop.current().stop()
 
     def write_error(self, status_code, **kwargs):

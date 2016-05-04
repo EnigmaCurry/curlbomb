@@ -39,6 +39,7 @@ def prepare(args, settings, parser):
     settings['resource'] = BytesIO(b'')
     settings['survey'] = True
     settings['receive_postbacks'] = False
+    settings['server_shutdown_timeout'] = 0
     
     def get_ping_command(settings, unwrapped=None):
         params = OrderedDict()
