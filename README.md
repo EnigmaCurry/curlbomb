@@ -260,14 +260,13 @@ create an alias for ease of use, for example:
 There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
 
 ## Command Line Args
-
     curlbomb [-h] [-n N] [-p PORT] [-d host[:port]] [-w] [-l] [-q] [-v]
              [--ssh SSH_FORWARD] [--ssl CERTIFICATE] [--pin] [-e]
              [--encrypt-to GPG_ID] [--passphrase] [--survey] [--unwrapped]
              [--client-logging] [--client-quiet] [--mime-type MIME_TYPE]
-             [--disable-knock] [--knock KNOCK] [--version]
+             [--pipe] [--disable-knock] [--knock KNOCK] [--version]
              {run,put,get,ping,ssh-copy-id} ...
-				   
+
 curlbomb has a few subcommands:
 
  * `run` - run a shell script
@@ -371,6 +370,13 @@ file called curlbomb.log
 
 `--mime-type MIME_TYPE` The mime-type header to send, by default
 "text/plain"
+
+`--pipe` construct the client command with pipe syntax rather than
+process substitution. curlbomb usually constructs client commands that
+look like `bash <(curl ...)`, but this doesn't work for some scripts
+that check for interactive input. In these cases `--pipe` will
+transform the client command into the more traditional `curl ... |
+bash`.
 
 `--disable-knock` Don't require a X-knock HTTP header from the
 client. Normally, curlbombs are one-time-use and meant to be
