@@ -1,12 +1,55 @@
 curlbomb cookbook
------------------
+=================
 
-There's several examples in the [README](README.md) for how to use curlbomb, but here's a few more.
+There's several examples in the [README](README.md) for how to use
+curlbomb, but here's a few more.
 
-I put the following stuff in my ~/.bashrc to setup aliases for common commands:
+I put the following into my ~/.bashrc to setup an alias for the most
+common options I use with curlbomb:
 
     # Run curlbomb via a public SSH proxy with TLS:
     alias cb="curlbomb --ssh ryan@example.com:8080 --ssl ~/.curlbomb/curlbomb.pem.gpg"
+
+Verified curlbomb proxy
+-----------------------
+
+Most often I use curlbomb to serve my own scripts, but I sometimes use
+it with external scripts too. In this mode, curlbomb is acting as a
+proxy for the upstream script and verifies it's integrity in the
+process.
+
+Download the official [sandstorm](https://sandstorm.io/) installer
+script, verify it's GPG signature, and serve:
+
+    curl https://install.sandstorm.io | curlbomb --pipe run --signature https://install.sandstorm.io/install.sh.sig
+
+(The `--pipe` parameter is necessary due to the way that the sandstorm
+install script is written to check for interactive terminals. If your
+use case does not use an interactive script you can omit `--pipe`)
+
+curlbomb can also download the script itself, if you want to:
+
+    curlbomb --pipe run --signature https://install.sandstorm.io/install.sh.sig https://install.sandstorm.io
+	
+This requires that first of all you have the sandstorm GPG keys loaded
+into your GPG keyring as [documented in their install guide](https://docs.sandstorm.io/en/latest/install/#option-3-pgp-verified-install) :
+
+    gpg --import <(curl https://raw.githubusercontent.com/sandstorm-io/sandstorm/master/keys/release-keyring.gpg)
+
+You will, of course, want to **carefully verify** that the imported signatures are correct.
+
+You can also verify the script by it's SHA256 hash:
+
+    curl https://install.sandstorm.io | curlbomb run --hash eaaf6d2077e1a093662edb46c028c9a68b70790bee256d90d8ada7da2250c309
+	
+This will verify that the script has the exact SHA256 hash
+specified. If the script ever changes, curlbomb will refuse to serve
+the file until you update the hash.
+
+Old examples
+------------
+
+I used to put these in my bashrc, before I wrote the put and get subcommands:
 
     # curlbomb to push a local file or directory to a client:
     # Always put the argument in quotes to allow pushing 
