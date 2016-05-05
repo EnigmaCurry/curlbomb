@@ -1,4 +1,6 @@
 1.4.0
+ * Fixes socket closing issues on shutdown by polling for open sockets
+   with psutil before shutdown.
  * --log-posts is only turned on explicity. Prior to 1.4.0 it was
    turned on automatically when pipeing output. This was just
    confusing.
