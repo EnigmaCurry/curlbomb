@@ -18,9 +18,10 @@ it with external scripts too. In this mode, curlbomb is acting as a
 proxy for the upstream script and verifies it's integrity in the
 process.
 
-Download the official [sandstorm](https://sandstorm.io/) installer
-script, verify it's GPG signature, make sure the signature was from
-support@sandstorm.io, then serve:
+Here's an example to download the official
+[sandstorm](https://sandstorm.io/) installer script, verify it's GPG
+signature, make sure the signature was from support@sandstorm.io, then
+serve:
 
     curl https://install.sandstorm.io | curlbomb --pipe run --signature https://install.sandstorm.io/install.sh.sig support@sandstorm.io
 
