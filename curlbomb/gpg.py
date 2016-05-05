@@ -120,7 +120,7 @@ def verify_resource(resource, signature, allowed_authors=[]):
             err = str(err, "utf-8")
             log.debug("gpg returned: {}".format(p.returncode))
             if p.returncode == 0:
-                m = re.search("^Primary key fingerprint: (.*)", err, re.MULTILINE)
+                m = re.search('Good signature from \"(.*)\"', err, re.MULTILINE)
                 if m:
                     fingerprint = m.groups()[0]
                     fingerprint_info = gpg_key_info(fingerprint)
