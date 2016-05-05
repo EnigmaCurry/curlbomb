@@ -19,17 +19,14 @@ proxy for the upstream script and verifies it's integrity in the
 process.
 
 Download the official [sandstorm](https://sandstorm.io/) installer
-script, verify it's GPG signature, and serve:
+script, verify it's GPG signature, make sure the signature was from
+support@sandstorm.io, then serve:
 
-    curl https://install.sandstorm.io | curlbomb --pipe run --signature https://install.sandstorm.io/install.sh.sig
+    curl https://install.sandstorm.io | curlbomb --pipe run --signature https://install.sandstorm.io/install.sh.sig support@sandstorm.io
 
 (The `--pipe` parameter is necessary due to the way that the sandstorm
 install script is written to check for interactive terminals. If your
 use case does not use an interactive script you can omit `--pipe`)
-
-curlbomb can also download the script itself, if you want to:
-
-    curlbomb --pipe run --signature https://install.sandstorm.io/install.sh.sig https://install.sandstorm.io
 	
 This requires that first of all you have the sandstorm GPG keys loaded
 into your GPG keyring as [documented in their install guide](https://docs.sandstorm.io/en/latest/install/#option-3-pgp-verified-install) :
