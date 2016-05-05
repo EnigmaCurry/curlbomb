@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import logging
 import tempfile
@@ -10,6 +11,7 @@ import tornado.web
 import tornado.ioloop
 import tornado.gen
 import requests
+import psutil
 
 from .ssh import SSHRemoteForward
 
@@ -25,7 +27,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     
     def initialize(self, resource, state, allowed_gets=1, knock=None,
                    mime_type='text/plain', allow_post_backs=False,
-                   log_post_backs=False, log_file=None, get_callback=None, shutdown_timeout=2):
+                   log_post_backs=False, log_file=None, get_callback=None):
         """Arguments:
         
           resource         - A file like object to serve the contents of
@@ -38,7 +40,6 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
           log_post_backs   - Log post backs to stdout
           log_file         - Log post backs to file
           get_callback     - callback to run when get is finished, passes request
-          shutdown_timeout - Time to wait for sockets to flush before shutdown
           *args            - The rest of the RequestHandler args
           **kwargs         - The rest of the RequestHandler kwargs
         """
@@ -50,7 +51,6 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
         self._get_callback = get_callback
         self._log_post_backs = log_post_backs
         self._log_file = log_file
-        self._shutdown_timeout = shutdown_timeout
         
         self._state = state
                 
@@ -76,16 +76,15 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
             else:
                 # Shutdown:
                 log.info("Served resource {} times. Done. Waiting for network buffers to clear".format(self._state['num_gets']))
-                # Hack to get tornado to shutdown AFTER the client has received all the data in the socket buffer
-                # This sets all the connected sockets to blocking with a short timeout and try to read data.
-                if self._shutdown_timeout > 0:
-                    for fd, sock in httpd._sockets.items():
-                        sock.setblocking(True)
-                        sock.settimeout(self._shutdown_timeout)
-                        try:
-                            sock.recv(1)
-                        except:
-                            pass
+                # Query psutil for ongoing socket connections that we don't want to kill yet:
+                proc = psutil.Process(os.getpid())
+                while True:
+                    for conn in proc.connections():
+                        if conn.status == 'ESTABLISHED':
+                            time.sleep(1)
+                            break
+                    else:
+                        break    
                 tornado.ioloop.IOLoop.current().stop()
 
     def write_error(self, status_code, **kwargs):
@@ -184,8 +183,7 @@ def run_server(settings):
         allow_post_backs=settings['receive_postbacks'],
         log_post_backs=settings['log_post_backs'],
         log_file=settings['log_file'],
-        get_callback=settings.get('get_callback', None),
-        shutdown_timeout=settings['server_shutdown_timeout']
+        get_callback=settings.get('get_callback', None)
     )
     
     unwrapped_script = settings['get_curlbomb_command'](settings, unwrapped=True)
@@ -247,7 +245,7 @@ def run_server(settings):
     #     _thread.start_new_thread(check_port_forward, ())
 
     try:
-        log.debug("server ready")
+        log.debug("server ready on local port {}".format(settings['port']))
         tornado.ioloop.IOLoop.current().start()
     except KeyboardInterrupt:
         if settings['verbose']:

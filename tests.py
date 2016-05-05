@@ -43,7 +43,7 @@ class CurlbombThread(threading.Thread):
 
 class CurlbombTestBase(unittest.TestCase):
 
-    def get_curlbomb(self, args, script=None, override_defaults={'server_shutdown_timeout':0}):
+    def get_curlbomb(self, args, script=None, override_defaults={}):
         """Prepare curlbomb to run in a thread
 
         Assumes args has a '{script}' formatter in it to replace a temporary path with

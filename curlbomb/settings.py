@@ -215,8 +215,6 @@ def get_settings(args=None, override_defaults={}):
         'time_command': False,
         # Function to get curlbomb command given settings:
         'get_curlbomb_command': get_curlbomb_command,
-        # Shutdown timeout:
-        'server_shutdown_timeout': 2,
         # Normally we do process substituition, but we can do a regular pipe as well:
         'pipe_to_shell_command': args.pipe
     }
