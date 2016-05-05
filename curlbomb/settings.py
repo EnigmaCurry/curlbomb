@@ -240,7 +240,7 @@ def get_settings(args=None, override_defaults={}):
         settings['client_logging'] = False
 
     if args.disable_postback:
-        log.error("--disable-postback and -1 are no longer valid options")
+        log.error("--disable-postback and -1 are no longer valid options. If you were using it for interactive script support, use --pipe.")
         sys.exit(1)
         
     if settings['unwrapped']:
