@@ -1,3 +1,8 @@
+1.4.1
+ * Fixes run --signature to better handle the capturing of who the
+   signature is from from the gpg output. This was only giving false
+   negatives.
+
 1.4.0
  * Fixes socket closing issues on shutdown by polling for open sockets
    with psutil before shutdown.
