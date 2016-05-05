@@ -52,7 +52,7 @@ installing packages.
 
 ## Install
 
-This script can be installed from the
+curlbomb can be installed from the
 [Arch User Repository](https://aur.archlinux.org/packages/curlbomb/)
 (AUR):
 
