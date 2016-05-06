@@ -27,7 +27,7 @@ def prepare(args, settings, parser):
         dest = args.dest
     p = subprocess.Popen(['tar','xzv','-C',dest], stdin=subprocess.PIPE)
     settings['log_process'] = p
-    settings['log_file'] = p.stdin
+    settings['postback_log_file'] = p.stdin
     parent_path, path = os.path.split(args.source[0])
     if len(parent_path) == 0:
         parent_path = os.curdir

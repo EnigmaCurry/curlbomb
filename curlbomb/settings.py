@@ -155,6 +155,8 @@ def get_settings(args=None, override_defaults={}):
     settings = {
         # Store args object:
         'args': args,
+        # Log file:
+        'log_file': args.log_file,
         # Instruct client to post stdout back to the server:
         'receive_postbacks': args.log_post_backs,
         # Run client script with this shell interpreter:
@@ -200,7 +202,7 @@ def get_settings(args=None, override_defaults={}):
         # Popen object processing log_post_backs
         'log_process': None,
         # File to receive log_post_backs:
-        'log_file': None,
+        'postback_log_file': None,
         # Don't print knock in wrapped curlbomb command:
         'require_knock_from_environment': True,
         # Client should use wget instead of curl
@@ -219,6 +221,11 @@ def get_settings(args=None, override_defaults={}):
         'pipe_to_shell_command': args.pipe
     }
     settings.update(override_defaults)
+
+    if settings['log_file']:
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(filename=settings['log_file'], level=logging.WARN)
     
     if args.verbose:
         logging.getLogger('curlbomb').setLevel(level=logging.INFO)

@@ -27,7 +27,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
     
     def initialize(self, resource, state, allowed_gets=1, knock=None,
                    mime_type='text/plain', allow_post_backs=False,
-                   log_post_backs=False, log_file=None, get_callback=None):
+                   log_post_backs=False, postback_log_file=None, get_callback=None):
         """Arguments:
         
           resource         - A file like object to serve the contents of
@@ -38,7 +38,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
           allow_post_backs - Allow client to post data back to the server. 
                              Delays server termination until post_backs == allowed_gets
           log_post_backs   - Log post backs to stdout
-          log_file         - Log post backs to file
+          postback_log_file         - Log post backs to file
           get_callback     - callback to run when get is finished, passes request
           *args            - The rest of the RequestHandler args
           **kwargs         - The rest of the RequestHandler kwargs
@@ -50,7 +50,7 @@ class CurlbombBaseRequestHandler(tornado.web.RequestHandler):
         self._allow_post_backs = allow_post_backs
         self._get_callback = get_callback
         self._log_post_backs = log_post_backs
-        self._log_file = log_file
+        self._postback_log_file = postback_log_file
         
         self._state = state
                 
@@ -142,9 +142,9 @@ class CurlbombStreamRequestHandler(CurlbombBaseRequestHandler):
         """Handle incoming PUT data"""
         if self._log_post_backs:
             sys.stdout.buffer.write(data)
-        if self._log_file:
-            self._log_file.write(data)
-            self._log_file.flush()
+        if self._postback_log_file:
+            self._postback_log_file.write(data)
+            self._postback_log_file.flush()
 
     def put(self):
         """Finish streamed PUT request"""
@@ -182,7 +182,7 @@ def run_server(settings):
         mime_type=settings['mime_type'],
         allow_post_backs=settings['receive_postbacks'],
         log_post_backs=settings['log_post_backs'],
-        log_file=settings['log_file'],
+        postback_log_file=settings['postback_log_file'],
         get_callback=settings.get('get_callback', None)
     )
     
@@ -256,7 +256,8 @@ def run_server(settings):
             httpd.ssh_conn.kill()
         settings['resource'].close()
         if settings['log_process']:
-            settings['log_file'].close()
+            if settings['postback_log_file']:
+                settings['postback_log_file'].close()
             settings['log_process'].wait()
             log.info("run_server done")
 

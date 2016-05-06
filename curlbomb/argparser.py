@@ -43,6 +43,9 @@ def argparser(formatter_class=argparse.HelpFormatter):
                         help="Be more quiet. Don't print the curlbomb command")
     parser.add_argument('-v', '--verbose', action="store_true",
                         help="Be more verbose. Enables --log-posts and print INFO logging")
+    parser.add_argument('--log', metavar="LOG_FILE", dest="log_file",
+                        help="log messages to LOG_FILE instead of stdout",
+                        default=None)
     parser.add_argument('--ssh', metavar="SSH_FORWARD",
                         help="Forward curlbomb through another host via SSH - "
                         "[user@]host[:ssh_port][:http_port]",
