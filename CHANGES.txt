@@ -1,3 +1,8 @@
+1.4.2
+ * Adds --log paramater to log messages to file instead of stdout.
+ * Print client command to stdout when pipeing curlbomb output, unless
+   -l is specified, then no client command is printed.
+
 1.4.1
  * Fixes run --signature to better handle the capturing of who the
    signature is from from the gpg output. This was only giving false
