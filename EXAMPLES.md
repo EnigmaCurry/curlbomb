@@ -44,6 +44,17 @@ This will verify that the script has the exact SHA256 hash
 specified. If the script ever changes, curlbomb will refuse to serve
 the file until you update the hash.
 
+
+Remotely invoke curlbomb
+------------------------
+
+You can create a curlbomb and invoke it on a remote server in one line:
+
+    echo "whoami" | curlbomb | ssh ryan@example.com
+	
+curlbomb prints out the client command to stdout when pipeing curlbomb
+output. This is passed to ssh and run verbatim.
+
 Old examples
 ------------
 
