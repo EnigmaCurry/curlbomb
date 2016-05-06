@@ -225,8 +225,10 @@ def run_server(settings):
             if settings['passphrase']:
                 sys.stderr.write("Client passphrase: {}\n\n".format(settings['passphrase']))
         else:
-            sys.stderr.write("{}\n".format(cmd))
-
+            # Print the client command to stdout as long as we aren't logging post backs:
+            if not settings['log_post_backs']:
+                sys.stdout.write("{}\n".format(cmd))
+                sys.stdout.flush()
     try:
         log.debug("server ready on local port {}".format(settings['port']))
         tornado.ioloop.IOLoop.current().start()
