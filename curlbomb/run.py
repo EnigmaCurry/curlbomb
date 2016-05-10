@@ -13,16 +13,17 @@ log = logging.getLogger('curlbomb.run')
 
 def add_parser(subparsers):
     run_parser = subparsers.add_parser('run', help="Run a local script on the client")
-    run_parser.add_argument('-c', '--command', metavar="COMMAND",
+    run_args = run_parser.add_argument_group("run args")
+    run_args.add_argument('-c', '--command', metavar="COMMAND",
                             help="The the shell command to curlbomb into "
                             "(default is to detect #!interpreter ie. the shebang)")
-    run_parser.add_argument('--hash', metavar="SHA256", dest="script_hash",
+    run_args.add_argument('--hash', metavar="SHA256", dest="script_hash",
                             help="The sha256 hash of the resource to verify before serving")
-    run_parser.add_argument("--signature", metavar=("FILE_OR_URL","GPG_ID"), nargs="+",
+    run_args.add_argument("--signature", metavar=("FILE_OR_URL","GPG_ID"), nargs="+",
                             help="Verify SCRIPT against this GPG signature. "
                             "Can be a file or a http(s) URL. Specify list of GPG IDs to allow, "
                             "otherwise any in your keyring will work.")
-    run_parser.add_argument('resource', metavar="SCRIPT", help="path or URL to script, or - to read from STDIN",
+    run_args.add_argument('resource', metavar="SCRIPT", help="path or URL to script, or - to read from STDIN",
                             nargs='?', default=sys.stdin)
 
     argparser.add_inheritible_args(run_parser, "run")

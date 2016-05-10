@@ -62,79 +62,83 @@ def add_inheritible_args(parser, subcommand=None):
     """
     def dest(name):
         return ("" if not subcommand else subcommand + "_") + name
-    
-    parser.add_argument('-n', '--num-gets', metavar="N",
+    server = parser.add_argument_group("These args modify the server")
+    server.add_argument('-n', '--num-gets', metavar="N",
                         help="Number of times to serve resource (default:1)",
                         type=int, dest=dest("num_gets"))
-    parser.add_argument('-p', '--port',  metavar="PORT", help="TCP port number to use "
+    server.add_argument('-p', '--port',  metavar="PORT", help="TCP port number to use "
                         "(default:random available)",
                         dest=dest("port"))
-    parser.add_argument('-d','--domain', metavar="host[:port]",
-                        help="Provide the domain and port to display "
-                        "in the constructed URL. (example.com:8080)",
-                        dest=dest("domain"))
-    parser.add_argument('-w', '--wget', 
-                        help="Output wget command rather than curl",
-                        action="store_true", dest=dest("wget"), default=None)
-    parser.add_argument('-l','--log-posts', dest=dest("log_post_backs"), action="store_true",
-                        help="Log client stdout to server stdout", default=None)
-    parser.add_argument('-q', '--quiet', action="store_true",
-                        help="Be more quiet. Don't print the curlbomb command",
-                        dest=dest("quiet"), default=None)
-    parser.add_argument('-v', '--verbose', action="store_true",
-                        help="Be more verbose. Enables --log-posts and print INFO logging",
-                        dest=dest("verbose"), default=None)
-    parser.add_argument('--log', metavar="LOG_FILE", dest=dest("log_file"),
-                        help="log messages to LOG_FILE instead of stdout")
-    parser.add_argument('--ssh', metavar="SSH_FORWARD", dest=dest("ssh"),
+    server.add_argument('--ssh', metavar="SSH_FORWARD", dest=dest("ssh"),
                         help="Forward curlbomb through another host via SSH - "
                         "[user@]host[:ssh_port][:http_port]")
-    parser.add_argument('--ssl', metavar="CERTIFICATE",
+    server.add_argument('--ssl', metavar="CERTIFICATE",
                         help="Use SSL with the given certificate file "
                         "(optionally PGP encrypted.) CERTIFICATE may be specified as a "
                         "single - to generate a new self-signed certificate and to turn "
                         "on --pin", default=None, dest=dest("ssl"))
-    parser.add_argument('--pin', help="Pin the SSL certificate hash into the client "
+    server.add_argument('--pin', help="Pin the SSL certificate hash into the client "
                         "command to force curl to use our certificate"
                         " (requires --ssl)", action="store_true", dest=dest("pin"),
                         default=None)
-    parser.add_argument("-e", "--encrypt", action="store_true",
+    server.add_argument("-e", "--encrypt", action="store_true",
                         help="Encrypt resource with GPG before serving. Will use a randomly generated "
                         "symmetric passphrase unless --encrypt-to or --passphrase is specified.",
                         dest=dest("encrypt"), default=None)
-    parser.add_argument("--encrypt-to", action="append", metavar="GPG_ID", help="Encrypt with the "
+    server.add_argument("--encrypt-to", action="append", metavar="GPG_ID", help="Encrypt with the "
                         "public key specified instead of a passphrase. Can be specified multiple times.",
                         dest=dest("encrypt_to"))
-    parser.add_argument("--passphrase", action="store_true",
+    server.add_argument("--passphrase", action="store_true",
                         help="Ask for a symmetric passphrase to encrypt with instead of a random one.",
                         dest=dest("passphrase"), default=None)
-    parser.add_argument('--survey', help="Just a survey mission, no bomb run "
+    server.add_argument('--mime-type', metavar="MIME/TYPE", help="The content type to serve",
+                        dest=dest("mime_type"))
+    server.add_argument('--disable-knock', action="store_true",
+                        help="Don't require authentication (no X-knock header)",
+                        dest=dest("disable_knock"), default=None)
+    server.add_argument('--knock', metavar="KNOCK", help="Use a specific knock rather than random",
+                        dest=dest("knock"))
+
+    client = parser.add_argument_group("These args modify the client command")
+    client.add_argument('-d','--domain', metavar="host[:port]",
+                        help="Provide the domain and port to display "
+                        "in the constructed URL. (example.com:8080)",
+                        dest=dest("domain"))
+    client.add_argument('-w', '--wget', 
+                        help="Output wget command rather than curl",
+                        action="store_true", dest=dest("wget"), default=None)
+    client.add_argument('--survey', help="Just a survey mission, no bomb run "
                         "(just get the script, don't run it)", action="store_true",
                         dest=dest("survey"), default=None)
-    parser.add_argument('--unwrapped',
+    client.add_argument('--unwrapped',
                         help="Get the unwrapped version of the curlbomb "
                         "(1 less server request, but longer command)", action="store_true",
                         dest=dest("unwrapped"), default=None)
-    parser.add_argument('--client-logging', dest=dest("client_logging"),
+    
+    cli = parser.add_argument_group("These args modify CLI interaction")
+    cli.add_argument('-l','--log-posts', dest=dest("log_post_backs"), action="store_true",
+                        help="Log client stdout to server stdout", default=None)
+    cli.add_argument('-q', '--quiet', action="store_true",
+                        help="Be more quiet. Don't print the curlbomb command",
+                        dest=dest("quiet"), default=None)
+    cli.add_argument('-v', '--verbose', action="store_true",
+                        help="Be more verbose. Enables --log-posts and print INFO logging",
+                        dest=dest("verbose"), default=None)
+    cli.add_argument('--log', metavar="LOG_FILE", dest=dest("log_file"),
+                        help="log messages to LOG_FILE instead of stdout")
+    cli.add_argument('--client-logging', dest=dest("client_logging"),
                         help="Enable client execution log (curlbomb.log on client)",
                         action="store_true", default=None)
-    parser.add_argument('--client-quiet', dest=dest("client_quiet"),
+    cli.add_argument('--client-quiet', dest=dest("client_quiet"),
                         help="Quiet the output on the client",
                         action="store_true", default=None)
-    parser.add_argument('--mime-type', metavar="MIME/TYPE", help="The content type to serve",
-                        dest=dest("mime_type"))
-    parser.add_argument('--pipe', help="Pipe to shell command rather than doing process substitution. "
+    cli.add_argument('--pipe', help="Pipe to shell command rather than doing process substitution. "
                         "This is necessary for most interactive scripts.",
                         action="store_true", dest=dest("pipe"), default=None)
-    parser.add_argument('--disable-knock', action="store_true",
-                        help="Don't require authentication (no X-knock header)",
-                        dest=dest("disable_knock"), default=None)
-    parser.add_argument('--knock', metavar="KNOCK", help="Use a specific knock rather than random",
-                        dest=dest("knock"))
-    parser.add_argument('--debug', action="store_true", default=None,
+    cli.add_argument('--debug', action="store_true", default=None,
                         # Be really verbose, turn on debug logging
                         help=argparse.SUPPRESS, dest=dest("debug"))
-    parser.add_argument('--version', action="version", version=get_version(True))
+    cli.add_argument('--version', action="version", version=get_version(True))
     
 def argparser(formatter_class=argparse.HelpFormatter):
     parser = argparse.ArgumentParser(

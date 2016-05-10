@@ -11,13 +11,14 @@ log = logging.getLogger('curlbomb.put')
 def add_parser(subparsers):
     put_parser = subparsers.add_parser(
         'put', help='Copy local files or directories to the client')
-    put_parser.add_argument('source', metavar="SOURCE", nargs=1,
-                            help="Local path to copy (or put glob in quotes)")
-    put_parser.add_argument('dest', metavar="DEST", nargs='?',
-                            help="Remote directory to copy to")
-    put_parser.add_argument('--exclude', metavar="PATTERN", action='append',
-                            help="Exclude files matching PATTERN, "
-                            "a glob(3)-style wildcard pattern", default=[])
+    put_args = put_parser.add_argument_group("put args")
+    put_args.add_argument('source', metavar="SOURCE", nargs=1,
+                          help="Local path to copy (or put glob in quotes)")
+    put_args.add_argument('dest', metavar="DEST", nargs='?',
+                          help="Remote directory to copy to")
+    put_args.add_argument('--exclude', metavar="PATTERN", action='append',
+                          help="Exclude files matching PATTERN, "
+                          "a glob(3)-style wildcard pattern", default=[])
 
     argparser.add_inheritible_args(put_parser, "put")
 

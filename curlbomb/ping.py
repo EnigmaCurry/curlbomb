@@ -21,19 +21,21 @@ def add_parser(subparsers):
             raise ValueError("valid range is 0-255")
         return x
 
-    ping_parser.add_argument('-m', '--message',
+    ping_args = ping_parser.add_argument_group("ping args")
+    
+    ping_args.add_argument('-m', '--message',
                              help="Adds message parameter to ping request")
-    ping_parser.add_argument('-r', '--return', dest='return_code',
+    ping_args.add_argument('-r', '--return', dest='return_code',
                              type=return_code,
                              help="Adds return parameter to ping request")
-    ping_parser.add_argument(
+    ping_args.add_argument(
         '--return-success', action='store_true',
         help="Always return 0 regardless of the 'return' parameter the "
         "client(s) sends back")
-    ping_parser.add_argument('-c','--command', help="Command to run on ping. "
+    ping_args.add_argument('-c','--command', help="Command to run on ping. "
                              "string formatters include: {return_code}, {message} "
                              "(don't use quotes around them)")
-    ping_parser.add_argument('--notify', action="store_true",
+    ping_args.add_argument('--notify', action="store_true",
                              help="Notify of ping via libnotify (python-notify2 package)")
 
     argparser.add_inheritible_args(ping_parser, "ping")
