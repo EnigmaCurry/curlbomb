@@ -372,6 +372,4 @@ def get_settings(args=None, override_defaults={}):
         settings['resource'] = gpg.encrypt_resource_to_recipients(settings['resource'], get_value("encrypt_to"))
 
 
-    print("n : {}".format(settings['num_gets']))
-        
     return settings
