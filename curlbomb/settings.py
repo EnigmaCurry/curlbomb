@@ -5,7 +5,7 @@ import base64
 import random
 import shlex
 
-from . import run
+from .subcommands import run
 from . import tls
 from . import gpg
 

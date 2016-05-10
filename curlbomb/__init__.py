@@ -19,6 +19,6 @@ http://github.com/EnigmaCurry/curlbomb
 
 from .main import *
 from . import argparser, settings, server
-from . import run, get, put, ping
+from .subcommands import run, get, put, ping
 
 __version__ = argparser.get_version()

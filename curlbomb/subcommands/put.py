@@ -4,7 +4,7 @@ import shlex
 import subprocess
 import logging
 
-from . import argparser
+from .. import argparser
 
 log = logging.getLogger('curlbomb.put')
 

@@ -2,11 +2,7 @@ import sys
 import argparse
 import os
 
-from . import run
-from . import get
-from . import put
-from . import ping
-from . import ssh_copy_id
+from .subcommands import run, get, put, ping, ssh_copy_id
 
 def get_version(include_path=False):
     import pkg_resources

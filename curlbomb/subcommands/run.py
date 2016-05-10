@@ -6,8 +6,8 @@ import hashlib
 
 import requests
 
-from . import argparser
-from .gpg import decrypt_resource_if_necessary, verify_resource
+from .. import argparser
+from ..gpg import decrypt_resource_if_necessary, verify_resource
 
 log = logging.getLogger('curlbomb.run')
 

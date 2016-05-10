@@ -3,7 +3,7 @@ import subprocess
 from io import BytesIO
 import logging
 
-from . import argparser
+from .. import argparser
 
 log = logging.getLogger('curlbomb.get')
 

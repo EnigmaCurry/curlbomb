@@ -4,7 +4,7 @@ from io import BytesIO
 import os
 
 from . import run
-from . import argparser
+from .. import argparser
 
 log = logging.getLogger('curlbomb.ping')
 
