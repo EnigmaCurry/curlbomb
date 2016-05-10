@@ -77,10 +77,6 @@ def add_inheritible_args(parser, subcommand=None):
                         "(optionally PGP encrypted.) CERTIFICATE may be specified as a "
                         "single - to generate a new self-signed certificate and to turn "
                         "on --pin", default=None, dest=dest("ssl"))
-    server.add_argument('--pin', help="Pin the SSL certificate hash into the client "
-                        "command to force curl to use our certificate"
-                        " (requires --ssl)", action="store_true", dest=dest("pin"),
-                        default=None)
     server.add_argument("-e", "--encrypt", action="store_true",
                         help="Encrypt resource with GPG before serving. Will use a randomly generated "
                         "symmetric passphrase unless --encrypt-to or --passphrase is specified.",
@@ -114,6 +110,10 @@ def add_inheritible_args(parser, subcommand=None):
                         help="Get the unwrapped version of the curlbomb "
                         "(1 less server request, but longer command)", action="store_true",
                         dest=dest("unwrapped"), default=None)
+    client.add_argument('--pin', help="Pin the SSL certificate hash into the client "
+                        "command to force curl to use our certificate"
+                        " (requires --ssl)", action="store_true", dest=dest("pin"),
+                        default=None)
     
     cli = parser.add_argument_group("These args modify CLI interaction")
     cli.add_argument('-l','--log-posts', dest=dest("log_post_backs"), action="store_true",
