@@ -114,6 +114,9 @@ def add_inheritible_args(parser, subcommand=None):
                         "command to force curl to use our certificate"
                         " (requires --ssl)", action="store_true", dest=dest("pin"),
                         default=None)
+    client.add_argument('--pipe', help="Pipe to shell command rather than doing process substitution. "
+                        "This is necessary for most interactive scripts.",
+                        action="store_true", dest=dest("pipe"), default=None)
     
     cli = parser.add_argument_group("These args modify CLI interaction")
     cli.add_argument('-l','--log-posts', dest=dest("log_post_backs"), action="store_true",
@@ -132,9 +135,6 @@ def add_inheritible_args(parser, subcommand=None):
     cli.add_argument('--client-quiet', dest=dest("client_quiet"),
                         help="Quiet the output on the client",
                         action="store_true", default=None)
-    cli.add_argument('--pipe', help="Pipe to shell command rather than doing process substitution. "
-                        "This is necessary for most interactive scripts.",
-                        action="store_true", dest=dest("pipe"), default=None)
     cli.add_argument('--debug', action="store_true", default=None,
                         # Be really verbose, turn on debug logging
                         help=argparse.SUPPRESS, dest=dest("debug"))
