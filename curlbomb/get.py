@@ -10,7 +10,7 @@ log = logging.getLogger('curlbomb.get')
 def add_parser(subparsers):
     get_parser = subparsers.add_parser(
         'get', help='Copy remote files or directories to the server')
-    get_args = get_parser.add_argument_group("get args")
+    get_args = get_parser.add_argument_group("get args",'Copy remote files or directories to the server')
     get_args.add_argument('source', metavar="SOURCE", nargs=1,
                             help="Remote path to copy (or put glob in quotes)")
     get_args.add_argument('dest', metavar="DEST", nargs='?',

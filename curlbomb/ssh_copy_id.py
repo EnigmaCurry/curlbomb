@@ -44,7 +44,7 @@ class SSHIdentityException(Exception):
 def add_parser(subparsers):
     parser = subparsers.add_parser(
         'ssh-copy-id', help="copy ssh public key to remote authorized_keys file")
-    parser_args = parser.add_argument_group("ssh-copy-id args")
+    parser_args = parser.add_argument_group("ssh-copy-id args", "copy ssh public key to remote authorized_keys file")
     parser_args.add_argument('identity', metavar="IDENTITY",
                         help="Read identity from SSH identity file (eg ~/.ssh/id_rsa.pub)")
 

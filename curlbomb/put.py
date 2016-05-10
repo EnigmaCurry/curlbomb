@@ -11,7 +11,7 @@ log = logging.getLogger('curlbomb.put')
 def add_parser(subparsers):
     put_parser = subparsers.add_parser(
         'put', help='Copy local files or directories to the client')
-    put_args = put_parser.add_argument_group("put args")
+    put_args = put_parser.add_argument_group("put args",'Copy local files or directories to the client')
     put_args.add_argument('source', metavar="SOURCE", nargs=1,
                           help="Local path to copy (or put glob in quotes)")
     put_args.add_argument('dest', metavar="DEST", nargs='?',

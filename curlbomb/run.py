@@ -13,7 +13,7 @@ log = logging.getLogger('curlbomb.run')
 
 def add_parser(subparsers):
     run_parser = subparsers.add_parser('run', help="Run a local script on the client")
-    run_args = run_parser.add_argument_group("run args")
+    run_args = run_parser.add_argument_group("run args", "Run a local script on the client")
     run_args.add_argument('-c', '--command', metavar="COMMAND",
                             help="The the shell command to curlbomb into "
                             "(default is to detect #!interpreter ie. the shebang)")

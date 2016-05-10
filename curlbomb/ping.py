@@ -21,7 +21,7 @@ def add_parser(subparsers):
             raise ValueError("valid range is 0-255")
         return x
 
-    ping_args = ping_parser.add_argument_group("ping args")
+    ping_args = ping_parser.add_argument_group("ping args", "Waits for client(s) to make a request, then performs an action")
     
     ping_args.add_argument('-m', '--message',
                              help="Adds message parameter to ping request")
