@@ -3,6 +3,8 @@ import subprocess
 from io import BytesIO
 import logging
 
+from . import argparser
+
 log = logging.getLogger('curlbomb.get')
 
 def add_parser(subparsers):
@@ -15,7 +17,10 @@ def add_parser(subparsers):
     get_parser.add_argument('--exclude', metavar="PATTERN", action='append',
                             help="Exclude files matching PATTERN, "
                             "a glob(3)-style wildcard pattern", default=[])
-    get_parser.set_defaults(prepare_command=prepare)
+
+    argparser.add_inheritible_args(get_parser, "get")
+    
+    get_parser.set_defaults(subcommand="get", prepare_command=prepare)
 
 
 def prepare(args, settings, parser):

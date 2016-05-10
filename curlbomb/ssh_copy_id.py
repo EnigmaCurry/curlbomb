@@ -4,6 +4,7 @@ from io import BytesIO
 import os
 
 from . import run
+from . import argparser
 
 log = logging.getLogger('curlbomb.ping')
 
@@ -45,7 +46,10 @@ def add_parser(subparsers):
         'ssh-copy-id', help="copy ssh public key to remote authorized_keys file")
     parser.add_argument('identity', metavar="IDENTITY",
                         help="Read identity from SSH identity file (eg ~/.ssh/id_rsa.pub)")
-    parser.set_defaults(prepare_command=prepare)
+
+    argparser.add_inheritible_args(parser, "ssh_copy_id")
+    
+    parser.set_defaults(subcommand="ssh_copy_id", prepare_command=prepare)
 
 def get_pubkey(identity):
     if not os.path.isfile(identity):

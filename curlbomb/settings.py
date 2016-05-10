@@ -151,52 +151,75 @@ def get_settings(args=None, override_defaults={}):
     # Parse the arguments:
     parser = argparser()
     args = parser.parse_args(args)
-        
+
+    def get_value(name, default=None):
+        """Get the value of `name` from args taking into account any inherited subparser argument
+
+        Returns the value with the following priority:
+         - From the subparser, if not None
+         - From the root parser, if not None
+         - From the value specified in default
+        """
+        subcommand = getattr(args, "subcommand", None)
+        if subcommand:
+            subcommand_value = getattr(args, subcommand + "_" + name, None)
+        else:
+            subcommand_value = None
+        root_value = getattr(args, name, None)
+
+        return subcommand_value if subcommand_value is not None\
+            else root_value if root_value is not None else default
+    
     settings = {
         # Store args object:
         'args': args,
         # Log file:
-        'log_file': args.log_file,
+        'log_file': get_value('log_file'),
         # Instruct client to post stdout back to the server:
-        'receive_postbacks': args.log_post_backs,
+        'receive_postbacks': get_value('log_post_backs', False),
         # Run client script with this shell interpreter:
         'shell_command': 'bash',
         # Client fetches URL resources with this command:
         'http_fetcher': 'curl -LSs',
         # Mime type to serve resource as:
-        'mime_type': args.mime_type,
+        'mime_type': get_value('mime_type', 'text/plain'),
         # Client should send it's hostname in the request header:
         'require_hostname_header': False,
         # Log client stdout to server stdout:
-        'log_post_backs': args.log_post_backs,
-        # Enable TLS - Path to cert or None specifies to generate a self-signed cert
-        'ssl': None if args.ssl == "-" else args.ssl,
+        'log_post_backs': get_value('log_post_backs', False),
+        # Enable TLS - 
+        'ssl': True if get_value('ssl') is not None else False,
+        # SSL Certificate path
+        'ssl_path': get_value('ssl') if get_value('ssl') is not "-" else None,
         # ssl context passed to server
         'ssl_context': None,
         # Enable SSL certificate pinning in client command:
-        'pin': args.pin or args.ssl is None,
+        'pin': get_value('pin', False),
         # Total number of allowed HTTP gets on resource:
-        'num_gets': args.num_gets,
+        'num_gets': get_value("num_gets", 1),
         # Require X-knock header:
-        'require_knock': not args.disable_knock,
+        'require_knock': not get_value("disable_knock", False),
         # The current knock:
-        'knock': args.knock,
+        'knock': get_value("knock"),
         # Server verbose flag
-        'verbose': args.verbose,
+        'verbose': get_value("verbose") or get_value("debug"),
+        # Server debug flag
+        'debug': get_value("debug", False),
         # Print curl command without shell_command
-        'survey': args.survey,
+        'survey': get_value("survey", False),
         # SSH tunnel
-        'ssh': args.ssh,
+        'ssh': get_value("ssh"),
         # Server quiet flag
-        'quiet': args.quiet and not args.verbose,
+        'quiet': get_value("quiet") and not get_value("verbose"),
         # Log stdout on client:
-        'client_logging': args.client_logging,
+        'client_logging': get_value("client_logging", False),
         # Client quiet flag
-        'client_quiet': args.client_quiet,
+        'client_quiet': get_value("client_quiet", False),
         # Client decryption:
-        'client_decrypt': args.encrypt or args.passphrase or args.encrypt_to,
+        'client_decrypt': get_value("encrypt") or get_value("passphrase") or get_value("encrypt_to"),
         # Server encryption (random_passphrase, user_passphrase, recipient):
-        'encryption_type': "user_passphrase" if args.passphrase else "recipient" if args.encrypt_to else "random_passphrase" if args.encrypt else None,
+        'encryption_type': "user_passphrase" if get_value("passphrase") else "recipient" if \
+            get_value("encrypt_to") else "random_passphrase" if get_value("encrypt") else None,
         # the passphrase that was generated or supplied by the user:
         'passphrase': None,
         # Popen object processing log_post_backs
@@ -206,9 +229,9 @@ def get_settings(args=None, override_defaults={}):
         # Don't print knock in wrapped curlbomb command:
         'require_knock_from_environment': True,
         # Client should use wget instead of curl
-        'wget': args.wget,
+        'wget': get_value("wget"),
         # Don't wrap curlbomb 
-        'unwrapped': args.unwrapped,
+        'unwrapped': get_value("unwrapped", False),
         # Use alternative stdin, only used in tests
         'stdin': sys.stdin,
         # Use alternative stdout, only used in tests
@@ -218,7 +241,7 @@ def get_settings(args=None, override_defaults={}):
         # Function to get curlbomb command given settings:
         'get_curlbomb_command': get_curlbomb_command,
         # Normally we do process substituition, but we can do a regular pipe as well:
-        'pipe_to_shell_command': args.pipe
+        'pipe_to_shell_command': get_value("pipe", False)
     }
     settings.update(override_defaults)
 
@@ -227,11 +250,11 @@ def get_settings(args=None, override_defaults={}):
             logging.root.removeHandler(handler)
         logging.basicConfig(filename=settings['log_file'], level=logging.WARN)
     
-    if args.verbose:
+    if settings['verbose']:
         logging.getLogger('curlbomb').setLevel(level=logging.INFO)
         logging.getLogger('tornado.access').setLevel(level=logging.INFO)
 
-    if args.debug:
+    if settings['debug']:
         settings['verbose'] = True
         logging.getLogger('curlbomb').setLevel(level=logging.DEBUG)
         logging.getLogger('tornado.access').setLevel(level=logging.DEBUG)
@@ -244,7 +267,7 @@ def get_settings(args=None, override_defaults={}):
         settings['receive_postbacks'] = False
         settings['client_logging'] = False
 
-    if args.disable_postback:
+    if get_value("disable_postback"):
         log.error("--disable-postback and -1 are no longer valid options. If you were using it for interactive script support, use --pipe.")
         sys.exit(1)
         
@@ -255,12 +278,15 @@ def get_settings(args=None, override_defaults={}):
         # command. This will output this unrwapped version instead.
         settings['require_knock_from_environment'] = False
 
-    if args.pin and args.ssl is False:
+    if settings["pin"] and not settings['ssl']:
         print("--pin requires --ssl")
         sys.exit(1)
+    if settings['ssl'] and settings['ssl_path'] == None:
+        # Auto pin ssl cert if ssl cert is auto-generated
+        settings['pin'] = True
 
     if settings['encryption_type'] == 'user_passphrase':
-        if args.encrypt_to:
+        if get_value("encrypt_to"):
             print("--passphrase and --encrypt-to options are incompatible with each other.")
             sys.exit(1)
         if not settings['passphrase']:
@@ -271,23 +297,23 @@ def get_settings(args=None, override_defaults={}):
     elif settings['encryption_type'] == 'random_passphrase':
         settings['passphrase'] = random_passphrase(25)
 
-    if args.wget:
+    if settings['wget']:
         settings['http_fetcher'] = "wget -q -O -"
-        if args.log_post_backs:
+        if settings['log_post_backs']:
             print("wget can't stream the client output, so --log-posts is not "
                   "supported in wget mode")
             sys.exit(1)
-        if args.pin:
+        if settings['pin']:
             print("SSL certificate pinning only works in curl mode")
             sys.exit(1)
 
-    if args.port == "random":
+    if get_value("port") is None:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('',0))
         settings['port'] = s.getsockname()[1]
         s.close()
     else:
-        settings['port'] = int(args.port)
+        settings['port'] = int(get_value("port"))
 
     settings['display_host'] = socket.gethostbyname(socket.gethostname())
     settings['display_port'] = settings['port']
@@ -312,20 +338,26 @@ def get_settings(args=None, override_defaults={}):
         else:
             settings['display_host'] = ssh_host
 
-    if args.domain:
+    if get_value("domain"):
         # Override displayed host:port
-        parts = args.domain.split(":")
+        parts = get_value("domain").split(":")
         settings['display_host'] = parts[0]
         if len(parts) > 1:
             settings['display_port'] = parts[1]
 
     if settings['ssl'] is not False:
         settings['ssl_context'] = tls.get_ssl_context_from_settings(settings)
-            
+    
     try:
         prepare_cmd = args.prepare_command
+        try:
+            subcommand = args.subcommand
+        except AttributeError:
+            log.error("Subparser does not specify it's own name")
+            sys.exit(1)
     except AttributeError:
         # No sub-command specified, default to run command with stdin
+        args.subcommand = "run"
         args.command = None
         args.script_hash = None
         args.signature = None
@@ -337,6 +369,9 @@ def get_settings(args=None, override_defaults={}):
     if settings['encryption_type'] in ('user_passphrase', 'random_passphrase'):
         settings['resource'] = gpg.encrypt_resource_symmetric(settings['resource'], settings['passphrase'])
     elif settings['encryption_type'] == 'recipient':
-        settings['resource'] = gpg.encrypt_resource_to_recipients(settings['resource'], args.encrypt_to)                  
-    
+        settings['resource'] = gpg.encrypt_resource_to_recipients(settings['resource'], get_value("encrypt_to"))
+
+
+    print("n : {}".format(settings['num_gets']))
+        
     return settings

@@ -5,6 +5,8 @@ import shlex
 import subprocess
 import logging
 
+from . import argparser
+
 log = logging.getLogger('curlbomb.ping')
 
 def add_parser(subparsers):
@@ -31,9 +33,12 @@ def add_parser(subparsers):
     ping_parser.add_argument('-c','--command', help="Command to run on ping. "
                              "string formatters include: {return_code}, {message} "
                              "(don't use quotes around them)")
-    ping_parser.add_argument('-n', '--notify', action="store_true",
+    ping_parser.add_argument('--notify', action="store_true",
                              help="Notify of ping via libnotify (python-notify2 package)")
-    ping_parser.set_defaults(prepare_command=prepare)
+
+    argparser.add_inheritible_args(ping_parser, "ping")
+
+    ping_parser.set_defaults(subcommand="ping", prepare_command=prepare)
 
 def prepare(args, settings, parser):
     settings['resource'] = BytesIO(b'')

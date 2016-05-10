@@ -4,6 +4,8 @@ import shlex
 import subprocess
 import logging
 
+from . import argparser
+
 log = logging.getLogger('curlbomb.put')
 
 def add_parser(subparsers):
@@ -16,7 +18,10 @@ def add_parser(subparsers):
     put_parser.add_argument('--exclude', metavar="PATTERN", action='append',
                             help="Exclude files matching PATTERN, "
                             "a glob(3)-style wildcard pattern", default=[])
-    put_parser.set_defaults(prepare_command=prepare)
+
+    argparser.add_inheritible_args(put_parser, "put")
+
+    put_parser.set_defaults(subcommand="put", prepare_command=prepare)
 
 
 def prepare(args, settings, parser):

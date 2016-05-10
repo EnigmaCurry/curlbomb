@@ -8,7 +8,7 @@ import re
 import pytest
 
 # Run tests
-if pytest.main(args=['--boxed', os.path.abspath("tests.py"), '-v']) != 0:
+if pytest.main(args=['--boxed', '-v', '-x', os.path.abspath("tests.py")]) != 0:
     print("Tests failed, build aborted")
     sys.exit(1)
 

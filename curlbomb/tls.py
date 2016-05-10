@@ -83,7 +83,7 @@ def create_self_signed_cert():
 
 def get_ssl_context_from_settings(settings):    
     if settings['ssl'] is not False:
-        if settings['ssl'] is None:
+        if settings['ssl_path'] is None:
             # Create self-signed certificate for one use:
             log.warn("No SSL certificate provided, creating a new self-signed certificate for this session")
             cert = create_self_signed_cert()
@@ -91,7 +91,7 @@ def get_ssl_context_from_settings(settings):
             settings['pin'] = True
         else:
             # Use pre-generated certificate file:
-            with open(settings['ssl'], 'br') as cert_file:
+            with open(settings['ssl_path'], 'br') as cert_file:
                 cert = decrypt_cert_if_necessary(cert_file.read())
         ssl_ctx = create_ssl_ctx(cert)
         settings['ssl_hash'] = get_pinned_cert_hash(cert)

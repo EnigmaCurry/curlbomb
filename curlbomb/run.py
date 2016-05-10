@@ -6,6 +6,7 @@ import hashlib
 
 import requests
 
+from . import argparser
 from .gpg import decrypt_resource_if_necessary, verify_resource
 
 log = logging.getLogger('curlbomb.run')
@@ -23,7 +24,10 @@ def add_parser(subparsers):
                             "otherwise any in your keyring will work.")
     run_parser.add_argument('resource', metavar="SCRIPT", help="path or URL to script, or - to read from STDIN",
                             nargs='?', default=sys.stdin)
-    run_parser.set_defaults(prepare_command=prepare)
+
+    argparser.add_inheritible_args(run_parser, "run")
+
+    run_parser.set_defaults(subcommand="run", prepare_command=prepare)
 
 
 def prepare(args, settings, parser):
