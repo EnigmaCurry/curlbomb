@@ -513,7 +513,7 @@ several ssh identities, being explicit seems the more sane thing to do
 than try to save some keystrokes and inevitably install the wrong key
 on the server.
 
-### share subcommand
+### Share subcommand
 
     curlbomb share FILE
 	
