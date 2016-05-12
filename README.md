@@ -265,7 +265,7 @@ There's a few more examples in [EXAMPLES.md](EXAMPLES.md)
              [--encrypt-to GPG_ID] [--passphrase] [--survey] [--unwrapped]
              [--client-logging] [--client-quiet] [--mime-type MIME_TYPE]
              [--pipe] [--disable-knock] [--knock KNOCK] [--version]
-             {run,put,get,ping,ssh-copy-id} ...
+             {run,put,get,ping,ssh-copy-id, share} ...
 
 curlbomb has a few subcommands:
 
@@ -276,6 +276,8 @@ curlbomb has a few subcommands:
    notification command
  * `ssh-copy-id` - copy SSH public keys to the remote authorized_keys
    file
+ * `share` - share a file with the knock embedded in the URL. Serves
+   file an unlimited number of times unless `-n` is specified.
  
 If no subcommand is specified, and there is data being piped to stdin,
 then the `run` subcommand is used implicitly.
@@ -498,3 +500,17 @@ determination of which key to install. Especially if you maintain
 several ssh identities, being explicit seems the more sane thing to do
 than try to save some keystrokes and inevitably install the wrong key
 on the server.
+
+### share subcommand
+
+    curlbomb share FILE
+	
+Shares the given file via a URL which includes the knock as a URL
+parameter. By default, share will serve the file an unlimited number
+of times, but can be restricted to a single get by setting `-n 1`.
+
+It would be nice to be able to log IP address information of the
+clients downloading, but this seems to not be possible when using SSL
+through an SSH forward (which is my normal use-case), so this has not
+been implemented. Perhaps some panopticlick style info could be
+interesting at some point.
