@@ -2,7 +2,7 @@ import sys
 import argparse
 import os
 
-from .subcommands import run, get, put, ping, ssh_copy_id
+from .subcommands import run, get, put, ping, ssh_copy_id, share
 
 def get_version(include_path=False):
     import pkg_resources
@@ -14,6 +14,24 @@ def get_version(include_path=False):
     if __file__.startswith(pkg.location):
         return pkg.version + ( " - {}".format(path) if include_path else "")
     return 'DEV' + ( " - {}".format(path) if include_path else "")
+
+def get_arg_value(args, name, default=None):
+    """Get the value of `name` from args taking into account any inherited subparser argument
+
+    Returns the value with the following priority:
+     - From the subparser, if not None
+     - From the root parser, if not None
+     - From the value specified in default
+    """
+    subcommand = getattr(args, "subcommand", None)
+    if subcommand:
+        subcommand_value = getattr(args, subcommand + "_" + name, None)
+    else:
+        subcommand_value = None
+    root_value = getattr(args, name, None)
+
+    return subcommand_value if subcommand_value is not None\
+        else root_value if root_value is not None else default
 
 def add_inheritible_args(parser, subcommand=None):
     """Add the root curlbomb arguments to a (sub)parser
@@ -135,7 +153,7 @@ def add_inheritible_args(parser, subcommand=None):
                         # Be really verbose, turn on debug logging
                         help=argparse.SUPPRESS, dest=dest("debug"))
     cli.add_argument('--version', action="version", version=get_version(True))
-    
+
 def argparser(formatter_class=argparse.HelpFormatter):
     parser = argparse.ArgumentParser(
         description='curlbomb is an HTTP server for serving one-time-use shell scripts',
@@ -155,6 +173,7 @@ def argparser(formatter_class=argparse.HelpFormatter):
     get.add_parser(subparsers)
     ping.add_parser(subparsers)
     ssh_copy_id.add_parser(subparsers)
+    share.add_parser(subparsers)
     
     return parser
 

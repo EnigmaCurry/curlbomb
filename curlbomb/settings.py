@@ -11,7 +11,7 @@ from . import gpg
 
 log = logging.getLogger('curlbomb.settings')
 
-from .argparser import argparser
+from .argparser import argparser, get_arg_value
 
 def random_passphrase(length):
     return base64.b64encode(bytes(random.sample(range(256), length)),
@@ -153,22 +153,7 @@ def get_settings(args=None, override_defaults={}):
     args = parser.parse_args(args)
 
     def get_value(name, default=None):
-        """Get the value of `name` from args taking into account any inherited subparser argument
-
-        Returns the value with the following priority:
-         - From the subparser, if not None
-         - From the root parser, if not None
-         - From the value specified in default
-        """
-        subcommand = getattr(args, "subcommand", None)
-        if subcommand:
-            subcommand_value = getattr(args, subcommand + "_" + name, None)
-        else:
-            subcommand_value = None
-        root_value = getattr(args, name, None)
-
-        return subcommand_value if subcommand_value is not None\
-            else root_value if root_value is not None else default
+        return get_arg_value(args, name, default)
     
     settings = {
         # Store args object:
