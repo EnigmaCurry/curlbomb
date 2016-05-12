@@ -284,6 +284,8 @@ then the `run` subcommand is used implicitly.
 
 ### The following arguments apply to all subcommands:
 
+#### These arguments modify the server:
+
 `-n N, --num-gets N` The maximum number of times the script may be
 fetched by clients, defaulting to 1. Increasing this may be useful in
 certain circumstances, but please note that the same knock parameter
@@ -292,23 +294,6 @@ default. Setting this to 0 will allow the resource to be downloaded an
 unlimited number of times.
 
 `-p PORT` The local TCP port number to use.
-
-`-d host[:port], --domain host[:port]` Specify the domain name and
-port that is displayed in the URL of the client command. This does not
-change where the resource is actually located, use --port or --ssh for
-that. This is useful if you are setting up your own port forwards and
-need to show an external URL.
-
-`-w, --wget` Print wget syntax rather than curl syntax. Useful in the
-case where the client doesn't have curl installed. Not compatible with
-`--log--posts` or the `put` and `get` subcommands. :(
-
-`-l, --log-posts` Log the client stdout to the server stdout.
-
-`-q, --quiet` Be more quiet. Don't print the client curlbomb command.
-
-`-v, --verbose` Be more verbose. Turns off `--quiet`, enables
-`--log-posts`, and enables INFO level logging within curlbomb.
 
 `--ssh SSH_FORWARD` Forwards the curlbomb server to a remote port of
 another computer through SSH. This is useful to serve curlbombs to
@@ -325,14 +310,6 @@ certificate, if any. If the SSL certificate path is specified as `-`, a
 temporary self-signed certificate will be generated for the current
 curlbomb session and `--pin` will be turned on implicitly.
 
-`--pin` (requires curl>=7.39.0) Pin the SSL certificate fingerprint
-into the client curl command. This is used to bypass the root CA store
-of the client machine, and to tell it exactly what the server's SSL
-certificate looks like. This is useful for mitigating
-man-in-the-middle attacks, as well as when using self-signed
-certificates. This makes the client command quite a bit longer than
-usual.
-
 `-e, --encrypt` Encrypt the resource with gpg before serving it to the
 client. A randomly generated symmetric passphrase will be printed
 below the client command on the server. This passphrase must be input
@@ -340,12 +317,37 @@ on the client. You can specify the passphrase to use interactively
 with `--passphrase`. You can use public key encryption if you use
 `--encrypt-to`
 
-`--passphrase` Encrypt the resource with a passphrase interactively
-asked on server start.
-
 `--encrypt-to GPG_ID` Encrypt the resource with the given gpg
 identity. Can be specified multiple times to encrypt to multiple
 recipients.
+
+`--passphrase` Encrypt the resource with a passphrase interactively
+asked on server start.
+
+`--mime-type MIME_TYPE` The mime-type header to send, by default
+"text/plain"
+
+`--disable-knock` Don't require a X-knock HTTP header from the
+client. Normally, curlbombs are one-time-use and meant to be
+copy-pasted from terminal to terminal. If you're embedding into a
+script, you may not know the knock parameter ahead of time and so this
+disables that. This is inherently less secure than the default.
+
+`--knock` Specify the knock string to use rather than generating a
+random one.
+
+
+#### These arguments modify the client command:
+
+`-d host[:port], --domain host[:port]` Specify the domain name and
+port that is displayed in the URL of the client command. This does not
+change where the resource is actually located, use --port or --ssh for
+that. This is useful if you are setting up your own port forwards and
+need to show an external URL.
+
+`-w, --wget` Print wget syntax rather than curl syntax. Useful in the
+case where the client doesn't have curl installed. Not compatible with
+`--log--posts` or the `put` and `get` subcommands. :(
 
 `--survey` Only print the curl (or wget) command. Don't redirect to a
 shell command. Useful for testing script retrieval without running
@@ -365,13 +367,13 @@ inside it. This won't work for sourcing environment variables in your
 shell, so use --unwrapped when you want to use
 source. 
 
-`--client-logging` Logs all client output locally on the client to a
-file called curlbomb.log
-
-`--client-quiet` Quiets the output on the client
-
-`--mime-type MIME_TYPE` The mime-type header to send, by default
-"text/plain"
+`--pin` (requires curl>=7.39.0) Pin the SSL certificate fingerprint
+into the client curl command. This is used to bypass the root CA store
+of the client machine, and to tell it exactly what the server's SSL
+certificate looks like. This is useful for mitigating
+man-in-the-middle attacks, as well as when using self-signed
+certificates. This makes the client command quite a bit longer than
+usual.
 
 `--pipe` construct the client command with pipe syntax rather than
 process substitution. curlbomb usually constructs client commands that
@@ -380,11 +382,21 @@ that check for interactive input. In these cases `--pipe` will
 transform the client command into the more traditional `curl ... |
 bash`.
 
-`--disable-knock` Don't require a X-knock HTTP header from the
-client. Normally, curlbombs are one-time-use and meant to be
-copy-pasted from terminal to terminal. If you're embedding into a
-script, you may not know the knock parameter ahead of time and so this
-disables that. This is inherently less secure than the default.
+#### These arguments modify the CLI interaction:
+
+`-l, --log-posts` Log the client stdout to the server stdout.
+
+`-q, --quiet` Be more quiet. Don't print the client curlbomb command.
+
+`-v, --verbose` Be more verbose. Turns off `--quiet`, enables
+`--log-posts`, and enables INFO level logging within curlbomb.
+
+`--log LOG_FILE` Log messages to a file rather than stdout
+
+`--client-logging` Logs all client output locally on the client to a
+file called curlbomb.log
+
+`--client-quiet` Quiets the output on the client
 
 `--version` Print the curlbomb version
 
