@@ -50,6 +50,8 @@ ansible, puppet, etc.) curlbomb can be used effectively in doing the
 front work for setting up these other tools, like copying SSH keys and
 installing packages.
 
+For even more narrative on this topic, [you can read my blog](http://www.enigmacurry.com/2016/05/19/curlbomb-server-automation-for-the-wayfaring-hacker/).
+
 ## Install
 
 curlbomb can be installed from the
