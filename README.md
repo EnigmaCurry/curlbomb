@@ -12,7 +12,7 @@ I call that a curl bomb... I don't know if anyone else does.
 
 _convenient_ as hell, but a security and trustability _nightmare_. Especially since installers usually require root access, do you trust a random file on the internet with direct access to your machine?
 
-But I usually try to ask myself this question: is it possible to turn a _bad_ idea into a _good_ one, or at the very least a less-bad idea? Let's take a look..
+But I usually try to ask myself this question: is it possible to turn a _bad_ idea into a _good_ one, or at the very least a less-bad idea? Let's take a look.
 
 curlbomb serves a single file (read from disk or stdin) via HTTP to the first client to request it, then it shuts down. A command is printed out that will construct the curl bomb the client needs to run, which includes a one-time-use passphrase (called a knock) that is required to download the resource. This command is copy/pasted (or typed) into another shell, on some other computer, which will download and run the script in one line.
 
@@ -48,15 +48,23 @@ pip install curlbomb
 
 ### Dependencies
 
-- Python 3.5 (I haven't tested anything lower)
-- [Tornado](http://www.tornadoweb.org/)
-- [Requests](https://pypi.python.org/pypi/requests)
-- [psutil](https://pypi.python.org/pypi/psutil/)
-- OpenSSL (optional, if using --ssl)
-- OpenSSH (optional, if using --ssh)
-- GnuPG (optional, if using encrypted SSL cert or resources)
-- [python-notify2](https://pypi.python.org/pypi/notify2) (optional, for desktop notifications when using ping subcommand)
-- curl (on the client machine, preferably version >= 7.39.0, for --pinnedpubkey support)
+  - Python 3.5 (I haven't tested anything lower)
+
+  - [Tornado](http://www.tornadoweb.org/)
+
+  - [Requests](https://pypi.python.org/pypi/requests)
+
+  - [psutil](https://pypi.python.org/pypi/psutil/)
+
+  - OpenSSL (optional, if using --ssl)
+
+  - OpenSSH (optional, if using --ssh)
+
+  - GnuPG (optional, if using encrypted SSL cert or resources)
+
+  - [python-notify2](https://pypi.python.org/pypi/notify2) (optional, for desktop notifications when using ping subcommand)
+
+  - curl (on the client machine, preferably version >= 7.39.0, for --pinnedpubkey support)
 
 ## Example Use
 
@@ -201,8 +209,7 @@ alias cb=curlbomb --ssl ~/.curlbomb/curlbomb.pem.gpg --ssh user@example.com:22:8
 
 There's a few more examples in
 
-<examples.md>
-</examples.md>
+[EXAMPLES.md](/EXAMPLES.md)
 
 ## Command Line Args
 
